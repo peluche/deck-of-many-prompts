@@ -11,6 +11,7 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/b64"),
     Div(hx_trigger="load", hx_get="/morse"),
     Div(hx_trigger="load", hx_get="/ascii"),
+    Div(hx_trigger="load", hx_get="/binary"),
     )
 
 # %%
@@ -113,10 +114,39 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value='hi'),
             Button('ascii', hx_post='/ascii', hx_target='previous input', hx_swap='outerHTML'),
-            Button('ascii', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
+            Button('asciid', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
+# %%
+# binary code
+def binary(x: str): return ' '.join(f'{ord(c):08b}' for c in x)
+def binaryd(x: str):
+    decoded, unknown = [], []
+    for d in x.split():
+        try: decoded.append(chr(int(d, 2)))
+        except Exception: unknown.append(d)
+    return ''.join(decoded), repr(unknown)
+
+@rt('/binary')
+def post(x:str):
+    return Input(id='x', name='x', value=binary(x))
+
+@rt('/binaryd')
+def post(x:str):
+    decoded, unknown = binaryd(x) # TODO
+    return Input(id='x', name='x', value=decoded)
+
+@rt('/binary')
+def get(): return Div(
+    P('binary'),
+    Form(
+        Group(
+            Input(id='x', name='x', value='hi'),
+            Button('binary', hx_post='/binary', hx_target='previous input', hx_swap='outerHTML'),
+            Button('binaryd', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
 
 
 # %%
