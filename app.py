@@ -17,6 +17,7 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/spaces"),
     Div(hx_trigger="load", hx_get="/leet"),
     Div(hx_trigger="load", hx_get="/upper"),
+    Div(hx_trigger="load", hx_get="/lower"),
     )
 
 # %%
@@ -39,7 +40,7 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('b64', hx_post='/b64', hx_target='previous input', hx_swap='outerHTML'),
-            Button('b64d', hx_post='/b64d', hx_target='previous input', hx_swap='outerHTML'))
+            Button('❌', hx_post='/b64d', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -89,7 +90,7 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('morse', hx_post='/morse', hx_target='previous input', hx_swap='outerHTML'),
-            Button('morsed', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
+            Button('❌', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -119,7 +120,7 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('ascii', hx_post='/ascii', hx_target='previous input', hx_swap='outerHTML'),
-            Button('asciid', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
+            Button('❌', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -149,7 +150,7 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('binary', hx_post='/binary', hx_target='previous input', hx_swap='outerHTML'),
-            Button('binaryd', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
+            Button('❌', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -176,7 +177,8 @@ def get(): return Div(
     Form(
         Group(
             Input(id='x', name='x', value=default_input),
-            Button('rot13', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'))
+            Button('rot13', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'),
+            Button('❌', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -210,7 +212,7 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('spaces', hx_post='/spaces', hx_target='previous input', hx_swap='outerHTML'),
-            Button('spacesd', hx_post='/spacesd', hx_target='previous input', hx_swap='outerHTML'))
+            Button('❌', hx_post='/spacesd', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
@@ -235,12 +237,17 @@ def maybe_leet(c):
     if random.random() > proba: return c
     return leet_encode.get(c.lower(), c)
 
-def leet(x: str): return ''.join(maybe_leet(c) for c in x)
+def leet(x: str): return ''.join(leet_encode.get(c.lower(), c) for c in x)
+def leetm(x: str): return ''.join(maybe_leet(c) for c in x)
 def leetd(x: str): return ''.join(leet_decode.get(c, c) for c in x)
 
 @rt('/leet')
 def post(x:str):
     return Input(id='x', name='x', value=leet(x))
+
+@rt('/leetm')
+def post(x:str):
+    return Input(id='x', name='x', value=leetm(x))
 
 @rt('/leetd')
 def post(x:str):
@@ -253,12 +260,13 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('leet', hx_post='/leet', hx_target='previous input', hx_swap='outerHTML'),
-            Button('leetd', hx_post='/leetd', hx_target='previous input', hx_swap='outerHTML'))
+            Button('🎲', hx_post='/leetm', hx_target='previous input', hx_swap='outerHTML'),
+            Button('❌', hx_post='/leetd', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
 # %%
-# upper
+# upper / lower
 def upperm(x: str): return ''.join(c.upper() if random.random() > 0.8 else c for c in x)
 def lowerm(x: str): return ''.join(c.lower() if random.random() > 0.8 else c for c in x)
 
@@ -285,9 +293,20 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('upper', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'),
-            Button('upper?', hx_post='/upperm', hx_target='previous input', hx_swap='outerHTML'),
+            Button('🎲', hx_post='/upperm', hx_target='previous input', hx_swap='outerHTML'),
+            Button('❌', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
+
+@rt('/lower')
+def get(): return Div(
+    P('lower'),
+    Form(
+        Group(
+            Input(id='x', name='x', value=default_input),
             Button('lower', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'),
-            Button('lower?', hx_post='/lowerm', hx_target='previous input', hx_swap='outerHTML'))
+            Button('🎲', hx_post='/lowerm', hx_target='previous input', hx_swap='outerHTML'),
+            Button('❌', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
