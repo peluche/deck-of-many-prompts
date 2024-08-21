@@ -259,6 +259,8 @@ def get(): return Div(
 
 # %%
 # upper
+def upperm(x: str): return ''.join(c.upper() if random.random() > 0.8 else c for c in x)
+def lowerm(x: str): return ''.join(c.lower() if random.random() > 0.8 else c for c in x)
 
 @rt('/upper')
 def post(x:str):
@@ -268,6 +270,14 @@ def post(x:str):
 def post(x:str):
     return Input(id='x', name='x', value=x.lower())
 
+@rt('/upperm')
+def post(x:str):
+    return Input(id='x', name='x', value=upperm(x))
+
+@rt('/lowerm')
+def post(x:str):
+    return Input(id='x', name='x', value=lowerm(x))
+
 @rt('/upper')
 def get(): return Div(
     P('upper'),
@@ -275,7 +285,9 @@ def get(): return Div(
         Group(
             Input(id='x', name='x', value=default_input),
             Button('upper', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'),
-            Button('lower', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'))
+            Button('upper?', hx_post='/upperm', hx_target='previous input', hx_swap='outerHTML'),
+            Button('lower', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'),
+            Button('lower?', hx_post='/lowerm', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
