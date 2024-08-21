@@ -4,15 +4,16 @@ from fasthtml.common import *
 import base64
 
 app, rt = fast_app(live=True)
+default_input = 'hi world! :)'
 
 @rt('/')
 def get(): return Div(
-    P('Hi!'),
     Div(hx_trigger="load", hx_get="/b64"),
     Div(hx_trigger="load", hx_get="/morse"),
     Div(hx_trigger="load", hx_get="/ascii"),
     Div(hx_trigger="load", hx_get="/binary"),
     Div(hx_trigger="load", hx_get="/rot13"),
+    Div(hx_trigger="load", hx_get="/spaces"),
     )
 
 # %%
@@ -33,7 +34,7 @@ def get(): return Div(
     P('base 64'),
     Form(
         Group(
-            Input(id='x', name='x', value='hi'),
+            Input(id='x', name='x', value=default_input),
             Button('b64', hx_post='/b64', hx_target='previous input', hx_swap='outerHTML'),
             Button('b64d', hx_post='/b64d', hx_target='previous input', hx_swap='outerHTML'))
         ),
@@ -83,7 +84,7 @@ def get(): return Div(
     P('morse'),
     Form(
         Group(
-            Input(id='x', name='x', value='hi'),
+            Input(id='x', name='x', value=default_input),
             Button('morse', hx_post='/morse', hx_target='previous input', hx_swap='outerHTML'),
             Button('morsed', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
         ),
@@ -113,7 +114,7 @@ def get(): return Div(
     P('ascii'),
     Form(
         Group(
-            Input(id='x', name='x', value='hi'),
+            Input(id='x', name='x', value=default_input),
             Button('ascii', hx_post='/ascii', hx_target='previous input', hx_swap='outerHTML'),
             Button('asciid', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
         ),
@@ -143,7 +144,7 @@ def get(): return Div(
     P('binary'),
     Form(
         Group(
-            Input(id='x', name='x', value='hi'),
+            Input(id='x', name='x', value=default_input),
             Button('binary', hx_post='/binary', hx_target='previous input', hx_swap='outerHTML'),
             Button('binaryd', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
         ),
@@ -171,11 +172,44 @@ def get(): return Div(
     P('rot13'),
     Form(
         Group(
-            Input(id='x', name='x', value='hi'),
+            Input(id='x', name='x', value=default_input),
             Button('rot13', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
+# %%
+# spaces
+def spaces(x: str): return ' '.join(x)
+
+def spacesd(x: str):
+    skipped = False
+    decoded = []
+    for c in x:
+        if c == ' ' and not skipped:
+            skipped = True
+        else:
+            skipped = False
+            decoded.append(c)
+    return ''.join(decoded)
+
+@rt('/spaces')
+def post(x:str):
+    return Input(id='x', name='x', value=spaces(x))
+
+@rt('/spacesd')
+def post(x:str):
+    return Input(id='x', name='x', value=spacesd(x))
+
+@rt('/spaces')
+def get(): return Div(
+    P('spaces'),
+    Form(
+        Group(
+            Input(id='x', name='x', value=default_input),
+            Button('spaces', hx_post='/spaces', hx_target='previous input', hx_swap='outerHTML'),
+            Button('spacesd', hx_post='/spacesd', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
 
 # %%
 serve()
