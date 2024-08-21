@@ -16,6 +16,7 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/rot13"),
     Div(hx_trigger="load", hx_get="/spaces"),
     Div(hx_trigger="load", hx_get="/leet"),
+    Div(hx_trigger="load", hx_get="/upper"),
     )
 
 # %%
@@ -253,6 +254,28 @@ def get(): return Div(
             Input(id='x', name='x', value=default_input),
             Button('leet', hx_post='/leet', hx_target='previous input', hx_swap='outerHTML'),
             Button('leetd', hx_post='/leetd', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
+
+# %%
+# upper
+
+@rt('/upper')
+def post(x:str):
+    return Input(id='x', name='x', value=x.upper())
+
+@rt('/lower')
+def post(x:str):
+    return Input(id='x', name='x', value=x.lower())
+
+@rt('/upper')
+def get(): return Div(
+    P('upper'),
+    Form(
+        Group(
+            Input(id='x', name='x', value=default_input),
+            Button('upper', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'),
+            Button('lower', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
