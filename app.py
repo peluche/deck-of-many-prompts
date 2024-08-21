@@ -2,6 +2,7 @@
 from fasthtml.common import fast_app, serve, Button, Div, Form, Group, Input, P
 from fasthtml.common import *
 import base64
+import random
 
 app, rt = fast_app(live=True)
 default_input = 'hi world! :)'
@@ -14,6 +15,7 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/binary"),
     Div(hx_trigger="load", hx_get="/rot13"),
     Div(hx_trigger="load", hx_get="/spaces"),
+    Div(hx_trigger="load", hx_get="/leet"),
     )
 
 # %%
@@ -208,6 +210,49 @@ def get(): return Div(
             Input(id='x', name='x', value=default_input),
             Button('spaces', hx_post='/spaces', hx_target='previous input', hx_swap='outerHTML'),
             Button('spacesd', hx_post='/spacesd', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
+
+# %%
+# leet
+leet_encode = {
+    'a': '4',
+    'b': '8',
+    'e': '3',
+    'g': '6',
+    'i': '1',
+    # ignore 'l' for the sake of reversing
+    'o': '0',
+    's': '5',
+    't': '7',
+    'z': '2',
+}
+leet_decode = {v: k for k, v in leet_encode.items()}
+def maybe_leet(c):
+    # encode vowels more often because it pleases my aesthetic
+    proba = 0.75 if c in 'aeiou' else 0.2
+    if random.random() > proba: return c
+    return leet_encode.get(c.lower(), c)
+
+def leet(x: str): return ''.join(maybe_leet(c) for c in x)
+def leetd(x: str): return ''.join(leet_decode.get(c, c) for c in x)
+
+@rt('/leet')
+def post(x:str):
+    return Input(id='x', name='x', value=leet(x))
+
+@rt('/leetd')
+def post(x:str):
+    return Input(id='x', name='x', value=leetd(x))
+
+@rt('/leet')
+def get(): return Div(
+    P('leet'),
+    Form(
+        Group(
+            Input(id='x', name='x', value=default_input),
+            Button('leet', hx_post='/leet', hx_target='previous input', hx_swap='outerHTML'),
+            Button('leetd', hx_post='/leetd', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
