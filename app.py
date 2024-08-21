@@ -12,6 +12,7 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/morse"),
     Div(hx_trigger="load", hx_get="/ascii"),
     Div(hx_trigger="load", hx_get="/binary"),
+    Div(hx_trigger="load", hx_get="/rot13"),
     )
 
 # %%
@@ -145,6 +146,33 @@ def get(): return Div(
             Input(id='x', name='x', value='hi'),
             Button('binary', hx_post='/binary', hx_target='previous input', hx_swap='outerHTML'),
             Button('binaryd', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
+
+# %%
+# rot13
+def rot13(x: str):
+    encoded, unknown  = [], []
+    for c in x:
+        if ord('A') <= ord(c) <= ord('Z'): encoded.append(chr((ord(c) - ord('A') + 13) % 26 + ord('A')))
+        elif ord('a') <= ord(c) <= ord('z'): encoded.append(chr((ord(c) - ord('a') + 13) % 26 + ord('a')))
+        else:
+            encoded.append(c)
+            unknown.append(c)
+    return ''.join(encoded), repr(unknown)
+
+@rt('/rot13')
+def post(x:str):
+    encoded, unknown = rot13(x) # TODO
+    return Input(id='x', name='x', value=encoded)
+
+@rt('/rot13')
+def get(): return Div(
+    P('rot13'),
+    Form(
+        Group(
+            Input(id='x', name='x', value='hi'),
+            Button('rot13', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
