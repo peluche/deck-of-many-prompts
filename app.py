@@ -1,18 +1,19 @@
+# %%
+from fasthtml.common import fast_app, serve, Button, Div, Form, Group, Input, P
 from fasthtml.common import *
+import base64
 
 app, rt = fast_app(live=True)
 
 @rt('/')
 def get(): return Div(
     P('Hi!'),
-    Form(
-        Group(Input(id='x', name='x', value='hi'), Button('b64')),
-        hx_post='/b64', hx_target='#x', hx_swap='value',
-    ),
+    Div(hx_trigger="load", hx_get="/b64"),
+    Div(hx_trigger="load", hx_get="/morse"),
     )
 
-import base64
-
+# %%
+# base64
 def b64(x: str): return base64.b64encode(x.encode()).decode()
 def b64d(x: str): return base64.b64decode(x.encode()).decode()
 
@@ -30,11 +31,13 @@ def get(): return Div(
     Form(
         Group(
             Input(id='x', name='x', value='hi'),
-            Button('b64', hx_post='/b64', hx_target='#x', hx_swap='outerHTML'),
-            Button('b64d', hx_post='/b64d', hx_target='#x', hx_swap='outerHTML'))
+            Button('b64', hx_post='/b64', hx_target='previous input', hx_swap='outerHTML'),
+            Button('b64d', hx_post='/b64d', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
+# %%
+# morse code
 # https://morsecode.world/international/morse2.html
 morse_encode = {
     'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
@@ -78,12 +81,10 @@ def get(): return Div(
     Form(
         Group(
             Input(id='x', name='x', value='hi'),
-            Button('morse', hx_post='/morse', hx_target='#x', hx_swap='outerHTML'),
-            Button('morsed', hx_post='/morsed', hx_target='#x', hx_swap='outerHTML'))
+            Button('morse', hx_post='/morse', hx_target='previous input', hx_swap='outerHTML'),
+            Button('morsed', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
 
+# %%
 serve()
-
-
-
