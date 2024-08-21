@@ -10,6 +10,7 @@ def get(): return Div(
     P('Hi!'),
     Div(hx_trigger="load", hx_get="/b64"),
     Div(hx_trigger="load", hx_get="/morse"),
+    Div(hx_trigger="load", hx_get="/ascii"),
     )
 
 # %%
@@ -54,15 +55,15 @@ morse_encode = {
 }
 morse_decode = {v: k for k, v in morse_encode.items()}
 
-def morse(x: str) -> str:
+def morse(x: str):
     x = x.upper().replace('%', '0/0')
     encoded = ' '.join(morse_encode.get(c, '') for c in x)
-    unknown = ''.join(c for c in x if c not in morse_encode)
+    unknown = repr(list(c for c in x if c not in morse_encode))
     return encoded, unknown
 
 def morsed(x: str):
     decoded = ''.join(morse_decode.get(m, '') for m in x.split()).replace('0/0', '%').lower()
-    unknown = ''.join(m for m in x.split() if m not in morse_decode)
+    unknown = repr(list(m for m in x.split() if m not in morse_decode))
     return decoded, unknown
 
 @rt('/morse')
@@ -73,7 +74,7 @@ def post(x:str):
 @rt('/morsed')
 def post(x:str):
     decoded, unknown = morsed(x) # TODO
-    return Input(id='x', name='x', value=morsed(x))
+    return Input(id='x', name='x', value=decoded)
 
 @rt('/morse')
 def get(): return Div(
@@ -85,6 +86,38 @@ def get(): return Div(
             Button('morsed', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
         ),
     )
+
+# %%
+# ascii code
+def ascii(x: str): return ' '.join(str(ord(c)) for c in x)
+def asciid(x: str):
+    decoded, unknown = [], []
+    for d in x.split():
+        try: decoded.append(chr(int(d)))
+        except Exception: unknown.append(d)
+    return ''.join(decoded), repr(unknown)
+
+@rt('/ascii')
+def post(x:str):
+    return Input(id='x', name='x', value=ascii(x))
+
+@rt('/asciid')
+def post(x:str):
+    decoded, unknown = asciid(x) # TODO
+    return Input(id='x', name='x', value=decoded)
+
+@rt('/ascii')
+def get(): return Div(
+    P('ascii'),
+    Form(
+        Group(
+            Input(id='x', name='x', value='hi'),
+            Button('ascii', hx_post='/ascii', hx_target='previous input', hx_swap='outerHTML'),
+            Button('ascii', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
+        ),
+    )
+
+
 
 # %%
 serve()
