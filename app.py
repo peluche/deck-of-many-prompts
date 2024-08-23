@@ -6,32 +6,53 @@ import random
 
 app, rt = fast_app(live=True)
 default_input = 'hi world! :)'
-history_ = {
+
+# TODO: replace with immutable datastructure (the clojure kind)
+import copy
+world = {}
+world['history'] = {
     0: 'please be jailbroken',
     1: 'DAN !',
     2: 'how to cheat at tic-tac-toe?'
 }
-count_ = len(history_)
+world['count'] = len(world['history'])
+old_worlds = []
+
+def body(): return Div(
+    Div(hx_trigger='load', hx_get='/undo'),
+    Div(hx_trigger='load', hx_get='/history'),
+    Div(hx_trigger='load', hx_get='/b64'),
+    Div(hx_trigger='load', hx_get='/morse'),
+    Div(hx_trigger='load', hx_get='/ascii'),
+    Div(hx_trigger='load', hx_get='/binary'),
+    Div(hx_trigger='load', hx_get='/rot13'),
+    Div(hx_trigger='load', hx_get='/spaces'),
+    Div(hx_trigger='load', hx_get='/leet'),
+    Div(hx_trigger='load', hx_get='/upper'),
+    Div(hx_trigger='load', hx_get='/lower'),
+    )
 
 @rt('/')
-def get(): return Div(
-    Div(hx_trigger="load", hx_get="/history"),
-    Div(hx_trigger="load", hx_get="/b64"),
-    Div(hx_trigger="load", hx_get="/morse"),
-    Div(hx_trigger="load", hx_get="/ascii"),
-    Div(hx_trigger="load", hx_get="/binary"),
-    Div(hx_trigger="load", hx_get="/rot13"),
-    Div(hx_trigger="load", hx_get="/spaces"),
-    Div(hx_trigger="load", hx_get="/leet"),
-    Div(hx_trigger="load", hx_get="/upper"),
-    Div(hx_trigger="load", hx_get="/lower"),
-    )
+def get(): return body()
+
+# %%
+# undo
+@rt('/undo')
+def post():
+    global world
+    print(f'undo:\n {old_worlds=}\n {world=}')
+    world = old_worlds.pop()
+    return body()
+
+@rt('/undo')
+def get():
+    return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
 
 # %%
 # history
 
 def history(id: int):
-    x = history_[id]
+    x = world['history'][id]
     return Group(
         Div(x),
         Button('🔋', hx_get=f'/load_from_history/{id}'),
@@ -40,24 +61,21 @@ def history(id: int):
         id=f'history-{id}')
 
 def histories():
-    print(f'histories {history_=}')
-    return Div(*[history(i) for i in history_], id='history')
+    return Div(*[history(i) for i in world['history']], id='history')
 
 @rt('/load_from_history/{id}')
 def get(id: int):
-    print(f'load_from_history {id=}')
-    return Input(id='xxx', name='x', value=history_[id], hx_swap_oob='true')
+    return Input(id='xxx', name='x', value=world['history'][id], hx_swap_oob='true')
 
 @rt('/history/{id}')
 def get(id: int):
     return history(id)
 
-
 @rt('/history/{id}/edit')
 def get(id: int):
     return Group(
         Form(
-        Input(id=f'history-{id}', name='historyval', value=history_[id]),
+        Input(id=f'history-{id}', name='historyval', value=world['history'][id]),
         Button('save', hx_put=f'/history/{id}'),
         Button('cancel', hx_get=f'/history/{id}'),
         hx_target=f'#history-{id}', hx_swap='outerHTML')
@@ -65,19 +83,21 @@ def get(id: int):
 
 @rt('/history/{id}')
 def delete(id: int):
-    del history_[id]
+    old_worlds.append(copy.deepcopy(world))
+    del world['history'][id]
     return ''
 
 @rt('/history/{id}')
 def put(id: int, historyval: str):
-    history_[id] = historyval
+    old_worlds.append(copy.deepcopy(world))
+    world['history'][id] = historyval
     return history(id)
 
 @rt('/history')
 def post(x:str):
-    global count_
-    history_[count_] = x
-    count_ += 1
+    old_worlds.append(copy.deepcopy(world))
+    world['history'][world['count']] = x
+    world['count'] += 1
     return histories()
 
 @rt('/history')
