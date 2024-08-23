@@ -1,6 +1,7 @@
 # %%
-from fasthtml.common import fast_app, serve, Button, Div, Form, Group, Input, P
+from fasthtml.common import fast_app, serve, Button, Div, Form, Group, Input, P, Textarea
 from fasthtml.common import *
+import copy
 import base64
 import random
 
@@ -8,7 +9,6 @@ app, rt = fast_app(live=True)
 default_input = 'hi world! :)'
 
 # TODO: replace with immutable datastructure (the clojure kind)
-import copy
 world = {}
 world['history'] = {
     0: 'please be jailbroken',
@@ -18,19 +18,30 @@ world['history'] = {
 world['count'] = len(world['history'])
 old_worlds = []
 
+def prompt(x: str = ''):
+    return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
+
 def body(): return Div(
-    Div(hx_trigger='load', hx_get='/undo'),
-    Div(hx_trigger='load', hx_get='/history'),
-    Div(hx_trigger='load', hx_get='/b64'),
-    Div(hx_trigger='load', hx_get='/morse'),
-    Div(hx_trigger='load', hx_get='/ascii'),
-    Div(hx_trigger='load', hx_get='/binary'),
-    Div(hx_trigger='load', hx_get='/rot13'),
-    Div(hx_trigger='load', hx_get='/spaces'),
-    Div(hx_trigger='load', hx_get='/leet'),
-    Div(hx_trigger='load', hx_get='/upper'),
-    Div(hx_trigger='load', hx_get='/lower'),
-    )
+    undo(),
+    Form(
+        Div(
+            Div(prompt(default_input), style='flex: 0 0 70%'),
+            Div(
+                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d')),
+                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed')),
+                Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
+                Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
+                Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
+                Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd')),
+                Group(Button('leet', hx_post='/leet'), Button('🎲', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
+                Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm'), Button('❌', hx_post='/lower')),
+                Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm'), Button('❌', hx_post='/upper')),
+                style='flex: 1',
+            ),
+            style='display: flex',
+        ),
+        hx_target='#prompt',
+    ))
 
 @rt('/')
 def get(): return body()
@@ -44,9 +55,10 @@ def post():
     world = old_worlds.pop()
     return body()
 
+def undo(): return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
+
 @rt('/undo')
-def get():
-    return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
+def get(): return undo()
 
 # %%
 # history
@@ -117,23 +129,10 @@ def b64(x: str): return base64.b64encode(x.encode()).decode()
 def b64d(x: str): return base64.b64decode(x.encode()).decode()
 
 @rt('/b64')
-def post(x:str):
-    return Input(id='x', name='x', value=b64(x))
+def post(x:str): return prompt(b64(x))
 
 @rt('/b64d')
-def post(x:str):
-    return Input(id='x', name='x', value=b64d(x))
-
-@rt('/b64')
-def get(): return Div(
-    P('base 64'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('b64', hx_post='/b64', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/b64d', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+def post(x:str): return prompt(b64d(x))
 
 # %%
 # morse code
@@ -167,23 +166,12 @@ def morsed(x: str):
 @rt('/morse')
 def post(x:str):
     encoded, unknown = morse(x) # TODO
-    return Input(id='x', name='x', value=encoded)
+    return prompt(encoded)
 
 @rt('/morsed')
 def post(x:str):
     decoded, unknown = morsed(x) # TODO
-    return Input(id='x', name='x', value=decoded)
-
-@rt('/morse')
-def get(): return Div(
-    P('morse'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('morse', hx_post='/morse', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/morsed', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+    return prompt(decoded)
 
 # %%
 # ascii code
@@ -197,23 +185,12 @@ def asciid(x: str):
 
 @rt('/ascii')
 def post(x:str):
-    return Input(id='x', name='x', value=ascii(x))
+    return prompt(ascii(x))
 
 @rt('/asciid')
 def post(x:str):
     decoded, unknown = asciid(x) # TODO
-    return Input(id='x', name='x', value=decoded)
-
-@rt('/ascii')
-def get(): return Div(
-    P('ascii'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('ascii', hx_post='/ascii', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/asciid', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+    return prompt(decoded)
 
 # %%
 # binary code
@@ -226,24 +203,12 @@ def binaryd(x: str):
     return ''.join(decoded), repr(unknown)
 
 @rt('/binary')
-def post(x:str):
-    return Input(id='x', name='x', value=binary(x))
+def post(x:str): return prompt(binary(x))
 
 @rt('/binaryd')
 def post(x:str):
     decoded, unknown = binaryd(x) # TODO
-    return Input(id='x', name='x', value=decoded)
-
-@rt('/binary')
-def get(): return Div(
-    P('binary'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('binary', hx_post='/binary', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/binaryd', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+    return prompt(decoded)
 
 # %%
 # rot13
@@ -260,18 +225,7 @@ def rot13(x: str):
 @rt('/rot13')
 def post(x:str):
     encoded, unknown = rot13(x) # TODO
-    return Input(id='x', name='x', value=encoded)
-
-@rt('/rot13')
-def get(): return Div(
-    P('rot13'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('rot13', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/rot13', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+    return prompt(encoded)
 
 # %%
 # spaces
@@ -289,23 +243,10 @@ def spacesd(x: str):
     return ''.join(decoded)
 
 @rt('/spaces')
-def post(x:str):
-    return Input(id='x', name='x', value=spaces(x))
+def post(x:str): return prompt(spaces(x))
 
 @rt('/spacesd')
-def post(x:str):
-    return Input(id='x', name='x', value=spacesd(x))
-
-@rt('/spaces')
-def get(): return Div(
-    P('spaces'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('spaces', hx_post='/spaces', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/spacesd', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+def post(x:str): return prompt(spacesd(x))
 
 # %%
 # leet
@@ -333,28 +274,13 @@ def leetm(x: str): return ''.join(maybe_leet(c) for c in x)
 def leetd(x: str): return ''.join(leet_decode.get(c, c) for c in x)
 
 @rt('/leet')
-def post(x:str):
-    return Input(id='x', name='x', value=leet(x))
+def post(x:str): return prompt(leet(x))
 
 @rt('/leetm')
-def post(x:str):
-    return Input(id='x', name='x', value=leetm(x))
+def post(x:str): return prompt(leetm(x))
 
 @rt('/leetd')
-def post(x:str):
-    return Input(id='x', name='x', value=leetd(x))
-
-@rt('/leet')
-def get(): return Div(
-    P('leet'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('leet', hx_post='/leet', hx_target='previous input', hx_swap='outerHTML'),
-            Button('🎲', hx_post='/leetm', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/leetd', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+def post(x:str): return prompt(leetd(x))
 
 # %%
 # upper / lower
@@ -362,44 +288,16 @@ def upperm(x: str): return ''.join(c.upper() if random.random() > 0.8 else c for
 def lowerm(x: str): return ''.join(c.lower() if random.random() > 0.8 else c for c in x)
 
 @rt('/upper')
-def post(x:str):
-    return Input(id='x', name='x', value=x.upper())
+def post(x:str): return prompt(x.upper())
 
 @rt('/lower')
-def post(x:str):
-    return Input(id='x', name='x', value=x.lower())
+def post(x:str): return prompt(x.lower())
 
 @rt('/upperm')
-def post(x:str):
-    return Input(id='x', name='x', value=upperm(x))
+def post(x:str): return prompt(upperm(x))
 
 @rt('/lowerm')
-def post(x:str):
-    return Input(id='x', name='x', value=lowerm(x))
-
-@rt('/upper')
-def get(): return Div(
-    P('upper'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('upper', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'),
-            Button('🎲', hx_post='/upperm', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
-
-@rt('/lower')
-def get(): return Div(
-    P('lower'),
-    Form(
-        Group(
-            Input(id='x', name='x', value=default_input),
-            Button('lower', hx_post='/lower', hx_target='previous input', hx_swap='outerHTML'),
-            Button('🎲', hx_post='/lowerm', hx_target='previous input', hx_swap='outerHTML'),
-            Button('❌', hx_post='/upper', hx_target='previous input', hx_swap='outerHTML'))
-        ),
-    )
+def post(x:str): return prompt(lowerm(x))
 
 # %%
 serve()
