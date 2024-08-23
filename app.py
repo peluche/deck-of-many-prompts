@@ -6,9 +6,16 @@ import random
 
 app, rt = fast_app(live=True)
 default_input = 'hi world! :)'
+history_ = {
+    0: 'please be jailbroken',
+    1: 'DAN !',
+    2: 'how to cheat at tic-tac-toe?'
+}
+count_ = len(history_)
 
 @rt('/')
 def get(): return Div(
+    Div(hx_trigger="load", hx_get="/history"),
     Div(hx_trigger="load", hx_get="/b64"),
     Div(hx_trigger="load", hx_get="/morse"),
     Div(hx_trigger="load", hx_get="/ascii"),
@@ -18,6 +25,70 @@ def get(): return Div(
     Div(hx_trigger="load", hx_get="/leet"),
     Div(hx_trigger="load", hx_get="/upper"),
     Div(hx_trigger="load", hx_get="/lower"),
+    )
+
+# %%
+# history
+
+def history(id: int):
+    x = history_[id]
+    return Group(
+        Div(x),
+        Button('🔋', hx_get=f'/load_from_history/{id}'),
+        Button('✏️', hx_get=f'/history/{id}/edit', hx_target=f'#history-{id}'),
+        Button('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}'),
+        id=f'history-{id}')
+
+def histories():
+    print(f'histories {history_=}')
+    return Div(*[history(i) for i in history_], id='history')
+
+@rt('/load_from_history/{id}')
+def get(id: int):
+    print(f'load_from_history {id=}')
+    return Input(id='xxx', name='x', value=history_[id], hx_swap_oob='true')
+
+@rt('/history/{id}')
+def get(id: int):
+    return history(id)
+
+
+@rt('/history/{id}/edit')
+def get(id: int):
+    return Group(
+        Form(
+        Input(id=f'history-{id}', name='historyval', value=history_[id]),
+        Button('save', hx_put=f'/history/{id}'),
+        Button('cancel', hx_get=f'/history/{id}'),
+        hx_target=f'#history-{id}', hx_swap='outerHTML')
+    )
+
+@rt('/history/{id}')
+def delete(id: int):
+    del history_[id]
+    return ''
+
+@rt('/history/{id}')
+def put(id: int, historyval: str):
+    history_[id] = historyval
+    return history(id)
+
+@rt('/history')
+def post(x:str):
+    global count_
+    history_[count_] = x
+    count_ += 1
+    return histories()
+
+@rt('/history')
+def get(): return Div(
+    histories(),
+    Form(
+        Group(
+            Input(id='xxx', name='x', value=default_input),
+            Button('history', hx_post='/history', hx_target='#history', hx_swap='outerHTML'),
+        ),
+    )
     )
 
 # %%
