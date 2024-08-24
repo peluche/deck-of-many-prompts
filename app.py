@@ -119,6 +119,7 @@ def body(): return Div(
             Div(
                 prompt(default_input),
                 Button('save', hx_post='/history', hx_target='#history'),
+                Button('📋', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
                 history(),
                 style='flex: 0 0 70%'),
             Div(
