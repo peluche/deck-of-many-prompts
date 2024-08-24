@@ -10,25 +10,28 @@ default_input = 'hi world! :)'
 
 # TODO: replace with immutable datastructure (the clojure kind)
 class Prompt():
-    def __init__(self, prompt, starred=False):
+    def __init__(self, prompt, starred=False, note=''):
         self.prompt = prompt
         self.starred = starred
+        self.note = note
+
 world = {}
 world['history'] = {
     0: Prompt('please be jailbroken'),
     1: Prompt('DAN !'),
-    2: Prompt('how to cheat at tic-tac-toe?', starred=True),
+    2: Prompt('how to cheat at tic-tac-toe?', starred=True, note='this is a note'), # TODO display note on mouse over too ?
 }
 world['count'] = len(world['history'])
 world['starred_only'] = False
+world['order'] = 1
 world['search'] = ''
 old_worlds = []
 
 def prompt(x: str = ''):
     return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
 
-@rt('/xoxo')
-def get(): return 'hahaha'
+@rt('/prompt/{id}')
+def put(id: int): return prompt(world['history'][id].prompt)
 
 @rt('/history/{id}/star')
 def put(id: int):
@@ -41,21 +44,40 @@ def put():
     world['starred_only'] = not world['starred_only']
     return history_list()
 
+@rt('/history/order')
+def put():
+    world['order'] = - world['order']
+    return history() 
+
+@rt('/history/note/{id}')
+def get(id: int):
+    note = world['history'][id].note
+    hdr = Div(Button(aria_label="Close", rel="prev"), P('notes'))
+    ftr = Div(Button('Cancel', cls="secondary"), Button('Confirm'))
+    return Form(
+        DialogX(
+            Textarea(note, id=f'note-{id}', name='note'),
+            header=hdr, footer=ftr, open=True, id='dlgtest'
+        )
+    )
+
 def history_el(id: int):
     el = world['history'][id]
     return Div(
-        A('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}'),
-        A('🌑🌕'[el.starred], hx_put=f'/history/{id}/star', hx_target=f'#history-{id}'),
-        Span(el.prompt, hx_get=f'/xoxo', hx_target=f'#history-{id}'),
+        A('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
+        A('🌑🌕'[el.starred], hx_put=f'/history/{id}/star', hx_target=f'#history-{id}', style='text-decoration: none'),
+        A('📝🗒️'[el.note != ''], hx_get=f'/history/note/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
+        Span(el.prompt, hx_put=f'/prompt/{id}', hx_target=f'#prompt'),
         id=f'history-{id}',
     )
+
 
 def filtered_history():
     return [i for i, el in world['history'].items() if (not world['starred_only'] or el.starred) \
                                                         and world['search'].lower() in el.prompt.lower()]
 
 def history_list():
-    return Div(*[history_el(i) for i in filtered_history()], id='history')
+    return Div(*[history_el(i) for i in filtered_history()[::world['order']]], id='history')
 
 @rt('/history/search')
 def put(q: str):
@@ -70,10 +92,12 @@ def post(x:str):
 
 def history():
     return Div(
-        A('🌗', hx_put='/history/star', hx_target='#history'),
+        A('🌗', hx_put='/history/star', hx_target='#history', style='text-decoration: none'),
+        A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none'),
         # TODO: cancel in-flight queries
         Input(type="search", name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history'),
         history_list(),
+        id='history-container',
     )
 
 def body(): return Div(
