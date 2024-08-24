@@ -1,5 +1,5 @@
 # %%
-from fasthtml.common import fast_app, serve, A, Button, Div, Form, Group, Input, P, Span, Textarea
+from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, Form, Group, Input, P, Pre, Span, Textarea
 from fasthtml.common import *
 import copy
 import base64
@@ -50,14 +50,26 @@ def put():
     return history() 
 
 @rt('/history/note/{id}')
+def put(id: int, note: str):
+    el = world['history'][id]
+    el.note = note
+    return history_el(id)
+
+@rt('/history/note/{id}')
 def get(id: int):
-    note = world['history'][id].note
-    hdr = Div(Button(aria_label="Close", rel="prev"), P('notes'))
-    ftr = Div(Button('Cancel', cls="secondary"), Button('Confirm'))
+    el = world['history'][id]
+    hdr = Div(Button(rel='prev'), P('note'))
+    ftr = Div(
+        Button('Cancel', cls='secondary'),
+        Button('Save', hx_put=f'/history/note/{id}', hx_target=f'#history-{id}', hx_swap='outerHTML'),
+        style='float: right')
     return Form(
         DialogX(
-            Textarea(note, id=f'note-{id}', name='note'),
-            header=hdr, footer=ftr, open=True, id='dlgtest'
+            Div(
+                Pre(el.prompt),
+                Textarea(el.note, id=f'note-{id}', name='note', style='height: 300px'),
+            ),
+            header=hdr, footer=ftr, open=True,
         )
     )
 
@@ -66,7 +78,7 @@ def history_el(id: int):
     return Div(
         A('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
         A('🌑🌕'[el.starred], hx_put=f'/history/{id}/star', hx_target=f'#history-{id}', style='text-decoration: none'),
-        A('📝🗒️'[el.note != ''], hx_get=f'/history/note/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
+        A('📝🗒️'[el.note == ''], hx_get=f'/history/note/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
         Span(el.prompt, hx_put=f'/prompt/{id}', hx_target=f'#prompt'),
         id=f'history-{id}',
     )
