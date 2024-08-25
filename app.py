@@ -5,14 +5,28 @@ import copy
 import base64
 import random
 
-app, rt = fast_app(live=True, hdrs=[Style('''
-.xs {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  width: 5px !important;
-}
-''')])
+app, rt = fast_app(live=True, hdrs=[
+    Style('''
+    .xs {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    width: 5px !important;
+    }
+    '''),
+    Script('''
+    document.addEventListener('htmx:configRequest', (event) => {
+        if (event.detail.elt.getAttribute('hx-include') === '#prompt') {
+            const promptArea = document.getElementById('prompt');
+            event.detail.parameters['prefix'] = promptArea.value.substring(0, promptArea.selectionStart);
+            event.detail.parameters['selected'] = promptArea.value.substring(promptArea.selectionStart, promptArea.selectionEnd);
+            event.detail.parameters['suffix'] = promptArea.value.substring(promptArea.selectionEnd);
+            event.detail.parameters['selection_start'] = promptArea.selectionStart;
+            event.detail.parameters['selection_end'] = promptArea.selectionEnd;
+        }
+    });
+    '''),
+])
 default_input = 'hi world! :)'
 
 # TODO: replace with immutable datastructure (the clojure kind)
@@ -34,11 +48,77 @@ world['order'] = 1
 world['search'] = ''
 old_worlds = []
 
+def handle_selection(func):
+    def wrapper(x: str, prefix: str, selected: str, suffix: str):
+        print(f'{prefix=}, {selected=}, {suffix=} {x=}')
+        if selected == '': return prompt(func(x))
+        return prompt(f'{prefix}{func(selected)}{suffix}')
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
 def prompt(x: str = ''):
     return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
 
 @rt('/prompt/{id}')
 def put(id: int): return prompt(world['history'][id].prompt)
+
+def body(): return Div(
+    undo(),
+    Form(
+        Div(
+            Div(
+                prompt(default_input),
+                Button('save', hx_post='/history', hx_target='#history'),
+                Button('📋', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
+                Button('save & 📋', 
+                    hx_post='/history', 
+                    hx_target='#history',
+                    hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
+                history(),
+                style='flex: 0 0 70%'),
+            Div(
+                Group(Button('b64', hx_post='/b64', hx_include='#prompt'), Button('❌', hx_post='/b64d', hx_include='#prompt', cls='xs')),
+                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
+                Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
+                Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
+                Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
+                Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd')),
+                Group(Button('leet', hx_post='/leet'), Button('🎲', cls='pikiki', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
+                Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm'), Button('❌', hx_post='/lower')),
+                Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm'), Button('❌', hx_post='/upper')),
+                style='flex: 1',
+            ),
+            style='display: flex',
+        ),
+        hx_target='#prompt',
+    ))
+
+@rt('/')
+def get(): return body()
+
+# %%
+# undo
+@rt('/undo')
+def post():
+    global world
+    print(f'undo:\n {old_worlds=}\n {world=}')
+    world = old_worlds.pop()
+    return body()
+
+def undo(): return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
+
+@rt('/undo')
+def get(): return undo()
+
+# %%
+# history
+
+@rt('/history/{id}')
+def delete(id: int):
+    old_worlds.append(copy.deepcopy(world))
+    del world['history'][id]
+    return ''
 
 @rt('/history/{id}/star')
 def put(id: int):
@@ -90,7 +170,6 @@ def history_el(id: int):
         id=f'history-{id}',
     )
 
-
 def filtered_history():
     return [i for i, el in world['history'].items() if (not world['starred_only'] or el.starred) \
                                                         and world['search'].lower() in el.prompt.lower()]
@@ -121,115 +200,20 @@ def history():
         id='history-container',
     )
 
-def body(): return Div(
-    undo(),
-    Form(
-        Div(
-            Div(
-                prompt(default_input),
-                Button('save', hx_post='/history', hx_target='#history'),
-                Button('📋', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
-                Button('save & 📋', 
-                    hx_post='/history', 
-                    hx_target='#history',
-                    hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
-                history(),
-                style='flex: 0 0 70%'),
-            Div(
-                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs')),
-                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
-                Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
-                Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
-                Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
-                Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd')),
-                Group(Button('leet', hx_post='/leet'), Button('🎲', cls='pikiki', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
-                Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm'), Button('❌', hx_post='/lower')),
-                Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm'), Button('❌', hx_post='/upper')),
-                style='flex: 1',
-            ),
-            style='display: flex',
-        ),
-        hx_target='#prompt',
-    ))
-
-@rt('/')
-def get(): return body()
-
-# %%
-# undo
-@rt('/undo')
-def post():
-    global world
-    print(f'undo:\n {old_worlds=}\n {world=}')
-    world = old_worlds.pop()
-    return body()
-
-def undo(): return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
-
-@rt('/undo')
-def get(): return undo()
-
-# %%
-# history
-
-# @rt('/load_from_history/{id}')
-# def get(id: int):
-#     return Input(id='xxx', name='x', value=world['history'][id], hx_swap_oob='true')
-
-# @rt('/history/{id}')
-# def get(id: int):
-#     return history(id)
-
-# @rt('/history/{id}/edit')
-# def get(id: int):
-#     return Group(
-#         Form(
-#         Input(id=f'history-{id}', name='historyval', value=world['history'][id]),
-#         Button('save', hx_put=f'/history/{id}'),
-#         Button('cancel', hx_get=f'/history/{id}'),
-#         hx_target=f'#history-{id}', hx_swap='outerHTML')
-#     )
-
-@rt('/history/{id}')
-def delete(id: int):
-    old_worlds.append(copy.deepcopy(world))
-    del world['history'][id]
-    return ''
-
-# @rt('/history/{id}')
-# def put(id: int, historyval: str):
-#     old_worlds.append(copy.deepcopy(world))
-#     world['history'][id] = historyval
-#     return history(id)
-
-# @rt('/history')
-# def post(x:str):
-#     old_worlds.append(copy.deepcopy(world))
-#     world['history'][world['count']] = x
-#     world['count'] += 1
-#     return histories()
-
-# @rt('/history')
-# def get(): return Div(
-#     histories(),
-#     Form(
-#         Group(
-#             Input(id='xxx', name='x', value=default_input),
-#             Button('history', hx_post='/history', hx_target='#history', hx_swap='outerHTML'),
-#         ),
-#     )
-#     )
-
 # %%
 # base64
 def b64(x: str): return base64.b64encode(x.encode()).decode()
 def b64d(x: str): return base64.b64decode(x.encode()).decode()
 
 @rt('/b64')
-def post(x:str): return prompt(b64(x))
+@handle_selection
+def post(x:str):
+    return b64(x)
 
 @rt('/b64d')
-def post(x:str): return prompt(b64d(x))
+@handle_selection
+def post(x: str, selection_start: int = None, selection_end: int = None):
+    return b64d(x)
 
 # %%
 # morse code
