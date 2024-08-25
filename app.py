@@ -16,7 +16,7 @@ app, rt = fast_app(live=True, hdrs=[
     '''),
     Script('''
     document.addEventListener('htmx:configRequest', (event) => {
-        if (event.detail.elt.getAttribute('hx-include') === '#prompt') {
+        if (event.detail.elt.closest('form#prompt-form')) {
             const promptArea = document.getElementById('prompt');
             event.detail.parameters['prefix'] = promptArea.value.substring(0, promptArea.selectionStart);
             event.detail.parameters['selected'] = promptArea.value.substring(promptArea.selectionStart, promptArea.selectionEnd);
@@ -78,8 +78,8 @@ def body(): return Div(
                 history(),
                 style='flex: 0 0 70%'),
             Div(
-                Group(Button('b64', hx_post='/b64', hx_include='#prompt'), Button('❌', hx_post='/b64d', hx_include='#prompt', cls='xs')),
-                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
+                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', hx_include='#prompt')),
+                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed')),
                 Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
                 Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
                 Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
@@ -92,6 +92,7 @@ def body(): return Div(
             style='display: flex',
         ),
         hx_target='#prompt',
+        id='prompt-form'
     ))
 
 @rt('/')
@@ -207,13 +208,11 @@ def b64d(x: str): return base64.b64decode(x.encode()).decode()
 
 @rt('/b64')
 @handle_selection
-def post(x:str):
-    return b64(x)
+def post(x:str): return b64(x)
 
 @rt('/b64d')
 @handle_selection
-def post(x: str, selection_start: int = None, selection_end: int = None):
-    return b64d(x)
+def post(x: str): return b64d(x)
 
 # %%
 # morse code
@@ -245,14 +244,16 @@ def morsed(x: str):
     return decoded, unknown
 
 @rt('/morse')
+@handle_selection
 def post(x:str):
     encoded, unknown = morse(x) # TODO
-    return prompt(encoded)
+    return encoded
 
 @rt('/morsed')
+@handle_selection
 def post(x:str):
     decoded, unknown = morsed(x) # TODO
-    return prompt(decoded)
+    return decoded
 
 # %%
 # ascii code
@@ -265,13 +266,14 @@ def asciid(x: str):
     return ''.join(decoded), repr(unknown)
 
 @rt('/ascii')
-def post(x:str):
-    return prompt(ascii(x))
+@handle_selection
+def post(x:str): return ascii(x)
 
 @rt('/asciid')
+@handle_selection
 def post(x:str):
     decoded, unknown = asciid(x) # TODO
-    return prompt(decoded)
+    return decoded
 
 # %%
 # binary code
@@ -284,12 +286,14 @@ def binaryd(x: str):
     return ''.join(decoded), repr(unknown)
 
 @rt('/binary')
-def post(x:str): return prompt(binary(x))
+@handle_selection
+def post(x:str): return binary(x)
 
 @rt('/binaryd')
+@handle_selection
 def post(x:str):
     decoded, unknown = binaryd(x) # TODO
-    return prompt(decoded)
+    return decoded
 
 # %%
 # rot13
@@ -304,9 +308,10 @@ def rot13(x: str):
     return ''.join(encoded), repr(unknown)
 
 @rt('/rot13')
+@handle_selection
 def post(x:str):
     encoded, unknown = rot13(x) # TODO
-    return prompt(encoded)
+    return encoded
 
 # %%
 # spaces
@@ -324,10 +329,12 @@ def spacesd(x: str):
     return ''.join(decoded)
 
 @rt('/spaces')
-def post(x:str): return prompt(spaces(x))
+@handle_selection
+def post(x:str): return spaces(x)
 
 @rt('/spacesd')
-def post(x:str): return prompt(spacesd(x))
+@handle_selection
+def post(x:str): return spacesd(x)
 
 # %%
 # leet
@@ -355,13 +362,16 @@ def leetm(x: str): return ''.join(maybe_leet(c) for c in x)
 def leetd(x: str): return ''.join(leet_decode.get(c, c) for c in x)
 
 @rt('/leet')
-def post(x:str): return prompt(leet(x))
+@handle_selection
+def post(x:str): return leet(x)
 
 @rt('/leetm')
-def post(x:str): return prompt(leetm(x))
+@handle_selection
+def post(x:str): return leetm(x)
 
 @rt('/leetd')
-def post(x:str): return prompt(leetd(x))
+@handle_selection
+def post(x:str): return leetd(x)
 
 # %%
 # upper / lower
@@ -369,16 +379,20 @@ def upperm(x: str): return ''.join(c.upper() if random.random() > 0.8 else c for
 def lowerm(x: str): return ''.join(c.lower() if random.random() > 0.8 else c for c in x)
 
 @rt('/upper')
-def post(x:str): return prompt(x.upper())
+@handle_selection
+def post(x:str): return x.upper()
 
 @rt('/lower')
-def post(x:str): return prompt(x.lower())
+@handle_selection
+def post(x:str): return x.lower()
 
 @rt('/upperm')
-def post(x:str): return prompt(upperm(x))
+@handle_selection
+def post(x:str): return upperm(x)
 
 @rt('/lowerm')
-def post(x:str): return prompt(lowerm(x))
+@handle_selection
+def post(x:str): return lowerm(x)
 
 # %%
 serve()
