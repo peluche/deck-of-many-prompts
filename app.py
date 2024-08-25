@@ -1,11 +1,18 @@
 # %%
-from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, Form, Group, Input, P, Pre, Span, Textarea
+from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, Form, Group, Input, P, Pre, Span, Style, Textarea
 from fasthtml.common import *
 import copy
 import base64
 import random
 
-app, rt = fast_app(live=True)
+app, rt = fast_app(live=True, hdrs=[Style('''
+.xs {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  width: 5px !important;
+}
+''')])
 default_input = 'hi world! :)'
 
 # TODO: replace with immutable datastructure (the clojure kind)
@@ -104,10 +111,12 @@ def post(x:str):
 
 def history():
     return Div(
-        A('🌗', hx_put='/history/star', hx_target='#history', style='text-decoration: none'),
-        A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none'),
-        # TODO: cancel in-flight queries
-        Input(type="search", name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history'),
+        Div(
+            A('🌗', hx_put='/history/star', hx_target='#history', style='text-decoration: none; font-size: 40px;'),
+            A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
+            Input(type="search", name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', style='position: relative; top: 10px;'),
+            style='display: flex; align-items: center;'
+        ),
         history_list(),
         id='history-container',
     )
@@ -120,16 +129,20 @@ def body(): return Div(
                 prompt(default_input),
                 Button('save', hx_post='/history', hx_target='#history'),
                 Button('📋', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
+                Button('save & 📋', 
+                    hx_post='/history', 
+                    hx_target='#history',
+                    hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
                 history(),
                 style='flex: 0 0 70%'),
             Div(
-                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d')),
-                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed')),
+                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs')),
+                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
                 Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
                 Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
                 Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
                 Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd')),
-                Group(Button('leet', hx_post='/leet'), Button('🎲', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
+                Group(Button('leet', hx_post='/leet'), Button('🎲', cls='pikiki', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
                 Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm'), Button('❌', hx_post='/lower')),
                 Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm'), Button('❌', hx_post='/upper')),
                 style='flex: 1',
