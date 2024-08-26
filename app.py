@@ -13,7 +13,8 @@ app, rt = fast_app(live=True, hdrs=[
     border: 0;
     margin: 0;
     padding: 5px;
-    max-width: 15%;
+    max-width: 50px;
+    min-width: 50px;
     }
     '''),
     Script('''
@@ -32,8 +33,7 @@ app, rt = fast_app(live=True, hdrs=[
 ])
 default_input = 'hi world! :)'
 
-# Example usage
-default_template = Template(prompt="Hello, world!", name="Default", description="A simple greeting template")
+def SGroup(*args, **kwargs): return Group(*args, **kwargs, style='width: auto; flex: 1; margin: 5px;')
 
 @dataclass
 class Template:
@@ -137,15 +137,18 @@ def body(): return Div(
                     Hr(),
                     Details(
                         Summary('transforms'),
-                        Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs')),
-                        Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
-                        Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs')),
-                        Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd', cls='xs')),
-                        Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13', cls='xs')),
-                        Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd', cls='xs')),
-                        Group(Button('leet', hx_post='/leet'), Button('🎲', hx_post='/leetm', cls='xs'), Button('❌', hx_post='/leetd', cls='xs')),
-                        Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm', cls='xs'), Button('❌', hx_post='/lower', cls='xs')),
-                        Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm', cls='xs'), Button('❌', hx_post='/upper', cls='xs')),
+                        Div(
+                            SGroup(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs secondary')),
+                            SGroup(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs secondary')),
+                            SGroup(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs secondary')),
+                            SGroup(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd', cls='xs secondary')),
+                            SGroup(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13', cls='xs secondary')),
+                            SGroup(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd', cls='xs secondary')),
+                            SGroup(Button('leet', hx_post='/leet'), Button('❌', hx_post='/leetd', cls='xs secondary')),
+                            SGroup(Button('upper', hx_post='/upper'), Button('❌', hx_post='/lower', cls='xs secondary')),
+                            SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
+                            style='display: flex; flex-wrap: wrap;',
+                        ),
                         open='true',
                     ),
                     Hr(),
@@ -154,7 +157,7 @@ def body(): return Div(
                         P('empty'),
                     ),
                 ),
-                style='flex: 1; max-width: 300px',
+                style='flex: 1; max-width: 600px',
             ),
             style='display: flex',
         ),
