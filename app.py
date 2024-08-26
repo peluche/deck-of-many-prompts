@@ -10,8 +10,8 @@ app, rt = fast_app(live=True, hdrs=[
     .xs {
     border: 0;
     margin: 0;
-    padding: 0;
-    width: 5px !important;
+    padding: 5px;
+    max-width: 15%;
     }
     '''),
     Script('''
@@ -78,15 +78,31 @@ def body(): return Div(
                 history(),
                 style='flex: 0 0 70%'),
             Div(
-                Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', hx_include='#prompt')),
-                Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed')),
-                Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid')),
-                Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd')),
-                Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13')),
-                Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd')),
-                Group(Button('leet', hx_post='/leet'), Button('🎲', cls='pikiki', hx_post='/leetm'), Button('❌', hx_post='/leetd')),
-                Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm'), Button('❌', hx_post='/lower')),
-                Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm'), Button('❌', hx_post='/upper')),
+                Card(
+                    Details(
+                        Summary('templates'),
+                        P('empty'),
+                    ),
+                    Hr(),
+                    Details(
+                        Summary('transforms'),
+                        Group(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs')),
+                        Group(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs')),
+                        Group(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs')),
+                        Group(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd', cls='xs')),
+                        Group(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13', cls='xs')),
+                        Group(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd', cls='xs')),
+                        Group(Button('leet', hx_post='/leet'), Button('🎲', hx_post='/leetm', cls='xs'), Button('❌', hx_post='/leetd', cls='xs')),
+                        Group(Button('upper', hx_post='/upper'), Button('🎲', hx_post='/upperm', cls='xs'), Button('❌', hx_post='/lower', cls='xs')),
+                        Group(Button('lower', hx_post='/lower'), Button('🎲', hx_post='/lowerm', cls='xs'), Button('❌', hx_post='/upper', cls='xs')),
+                        open='true',
+                    ),
+                    Hr(),
+                    Details(
+                        Summary('dict expansion'),
+                        P('empty'),
+                    ),
+                ),
                 style='flex: 1',
             ),
             style='display: flex',
