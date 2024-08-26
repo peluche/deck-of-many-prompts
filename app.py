@@ -91,6 +91,11 @@ def put(id: int): return prompt(world['history'][id].prompt)
 @rt('/prompt/template/{id}')
 def put(id: int): return prompt(world['template'][id].prompt)
 
+@rt('/template/search')
+def put(qt: str):
+    world['search_template'] = qt
+    return template_list()
+
 def filtered_template():
     return [i for i, el in world['template'].items() if world['search_template'].lower() in el.prompt.lower()]
 
@@ -124,8 +129,7 @@ def body(): return Div(
                     Details(
                         Summary('templates'),
                         Div(
-                                        Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', style='position: relative; top: 10px;'),
-
+                            Input(type='search', name='qt', value=world['search_template'], hx_trigger='keyup, search', hx_put='/template/search', hx_target='#template'),
                             template_list(),
                             id='template-container',
                         )
