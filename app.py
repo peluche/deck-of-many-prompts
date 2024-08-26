@@ -4,6 +4,7 @@ from fasthtml.common import *
 import copy
 import base64
 import random
+from functools import wraps
 
 app, rt = fast_app(live=True, hdrs=[
     Style('''
@@ -15,6 +16,7 @@ app, rt = fast_app(live=True, hdrs=[
     }
     '''),
     Script('''
+    htmx.config.allowNestedOobSwaps = false;
     document.addEventListener('htmx:configRequest', (event) => {
         if (event.detail.elt.closest('form#prompt-form')) {
             const promptArea = document.getElementById('prompt');
@@ -46,14 +48,24 @@ world['count'] = len(world['history'])
 world['starred_only'] = False
 world['order'] = 1
 world['search'] = ''
-old_worlds = []
+undo_buffer = []
+redo_buffer = []
+
+def handle_undo(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        redo_buffer.clear()
+        # TODO: implem immutable persistent data structure instead
+        undo_buffer.append(copy.deepcopy(world))
+        return func(*args, **kwargs), undo()
+    return wrapper
 
 def handle_selection(func):
+    # intentionally skip @wraps to mess with the signature
     def wrapper(x: str, prefix: str, selected: str, suffix: str):
-        print(f'{prefix=}, {selected=}, {suffix=} {x=}')
         if selected == '': return prompt(func(x))
         return prompt(f'{prefix}{func(selected)}{suffix}')
-
+    # @rt(...) needs the func name to infer the method (get/post/...) 
     wrapper.__name__ = func.__name__
     return wrapper
 
@@ -76,7 +88,7 @@ def body(): return Div(
                     hx_target='#history',
                     hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
                 history(),
-                style='flex: 0 0 70%'),
+                style='flex: 1'),
             Div(
                 Card(
                     Details(
@@ -103,37 +115,49 @@ def body(): return Div(
                         P('empty'),
                     ),
                 ),
-                style='flex: 1',
+                style='flex: 1; max-width: 300px',
             ),
             style='display: flex',
         ),
         hx_target='#prompt',
         id='prompt-form'
-    ))
+    ),
+    id='body-content',
+    )
 
 @rt('/')
 def get(): return body()
 
 # %%
-# undo
+# undo / redo
 @rt('/undo')
 def post():
     global world
-    print(f'undo:\n {old_worlds=}\n {world=}')
-    world = old_worlds.pop()
+    redo_buffer.append(copy.deepcopy(world))
+    world = undo_buffer.pop()
     return body()
 
-def undo(): return Button('undo', hx_post='/undo', hx_target='body', hx_swap='innerHTML')
+@rt('/redo')
+def post():
+    global world
+    undo_buffer.append(copy.deepcopy(world))
+    world = redo_buffer.pop()
+    return body()
 
-@rt('/undo')
-def get(): return undo()
+def undo():
+    return Div(
+    Button('undo', hx_post='/undo', hx_target='#body-content', hx_swap='outerHTML', disabled='true' if not undo_buffer else None),
+    Button('redo', hx_post='/redo', hx_target='#body-content', hx_swap='outerHTML', disabled='true' if not redo_buffer else None),
+    id='undo', hx_swap_oob='true',
+    )
 
 # %%
 # history
 
 @rt('/history/{id}')
+@handle_undo
 def delete(id: int):
-    old_worlds.append(copy.deepcopy(world))
+    print(f'delete {id=}')
     del world['history'][id]
     return ''
 
@@ -146,7 +170,7 @@ def put(id: int):
 @rt('/history/star')
 def put():
     world['starred_only'] = not world['starred_only']
-    return history_list()
+    return history()
 
 @rt('/history/order')
 def put():
@@ -208,7 +232,7 @@ def post(x:str):
 def history():
     return Div(
         Div(
-            A('🌗', hx_put='/history/star', hx_target='#history', style='text-decoration: none; font-size: 40px;'),
+            A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
             A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
             Input(type="search", name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', style='position: relative; top: 10px;'),
             style='display: flex; align-items: center;'
