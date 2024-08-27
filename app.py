@@ -155,16 +155,27 @@ def body(): return Div(
                             SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
-                        open='true',
+                        # open='true',
                     ),
                     Hr(),
                     Details(
                         Summary('dict expansion'),
                         Div(
-                            Label('marker', Input(name='marker', value='$1')),
-                            Label('dictionary (one entry per line)', Textarea(name='dictionary')),
+                            Label('marker', Input(id='marker', name='marker', value='$1')),
+                            Label('dictionary (one entry per line)', Textarea('abc\n123\nwait what?\n.', id='wordlist', name='wordlist')),
+                            P('load dict dropdown'),
+                            P('drag and drop file'),
+                            Button('expand', hx_post='/expand', hx_target='#history', hx_swap='outerHTML'), # xxx
                         ),
                         open='true',
+                    ),
+                    Hr(),
+                    Details(
+                        Summary('image'),
+                        Div(P('drag and drop image')),
+                        Button('image to b64'),
+                        Textarea('text to embed in image'),
+                        Button('embed'),
                     ),
                 ),
                 style='flex: 1; max-width: 600px',
@@ -180,6 +191,19 @@ def body(): return Div(
 
 @rt('/')
 def get(): return body()
+
+# %%
+# dict expansion
+def expand(prompt: str, marker: str, wordlist: str):
+    return [prompt.replace(marker, word) for word in wordlist.split('\n')]
+
+@rt('/expand')
+@handle_undo
+def post(x: str, marker: str, wordlist: str):
+    for expanded in expand(x, marker, wordlist):
+        world['history'][world['count']] = Prompt(expanded)
+        world['count'] += 1
+    return history_list()
 
 # %%
 # undo / redo
