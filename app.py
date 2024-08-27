@@ -29,6 +29,12 @@ app, rt = fast_app(live=True, hdrs=[
             event.detail.parameters['selection_end'] = promptArea.selectionEnd;
         }
     });
+    /* (づ ◕‿◕ )づ */
+    let k = [38,38,40,40,37,39,37,39,66,65], i = 0;
+    document.addEventListener('keydown', e => {
+        i = e.keyCode == k[i] ? i + 1 : 0;
+        if (i == 10) alert('( ಥ‿ಥ)  ლ(́◉◞౪◟◉‵ლ)');
+    });
     '''),
 ])
 default_input = 'hi world! :)'
