@@ -129,7 +129,7 @@ def body(): return Div(
                     Details(
                         Summary('templates'),
                         Div(
-                            Input(type='search', name='qt', value=world['search_template'], hx_trigger='keyup, search', hx_put='/template/search', hx_target='#template'),
+                            Input(type='search', name='qt', value=world['search_template'], hx_trigger='keyup, search', hx_put='/template/search', hx_target='#template', hx_swap='outerHTML'),
                             template_list(),
                             id='template-container',
                         )
@@ -154,7 +154,11 @@ def body(): return Div(
                     Hr(),
                     Details(
                         Summary('dict expansion'),
-                        P('empty'),
+                        Div(
+                            Label('marker', Input(name='marker', value='$1')),
+                            Label('dictionary (one entry per line)', Textarea(name='dictionary')),
+                        ),
+                        open='true',
                     ),
                 ),
                 style='flex: 1; max-width: 600px',
@@ -162,6 +166,7 @@ def body(): return Div(
             style='display: flex',
         ),
         hx_target='#prompt',
+        onkeydown='if (event.keyCode === 13 && event.target.tagName !== "TEXTAREA") event.preventDefault();',
         id='prompt-form'
     ),
     id='body-content',
@@ -276,7 +281,7 @@ def history():
         Div(
             A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
             A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
-            Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', style='position: relative; top: 10px;'),
+            Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', hx_swap='outerHTML', style='position: relative; top: 10px;'),
             style='display: flex; align-items: center;'
         ),
         history_list(),
