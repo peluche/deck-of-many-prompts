@@ -190,7 +190,6 @@ def body(): return Div(
                                 id='wordlist_id', name='wordlist_id', hx_get='/load_wordlist', hx_trigger='change', hx_target='#wordlist', hx_swap='outerHTML',
                                 ),
                             ),
-                            # xxx
                             Div(
                                 P('or drop wordlist here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload/wordlist', hx_trigger="postdrop", hx_target='#wordlist', hx_swap='outerHTML',
                                     **{ 'hx-on:drop': 'event.preventDefault(); this.classList.remove("dragover"); document.getElementById("uw").files = event.dataTransfer.files; htmx.trigger(this, "postdrop");',
@@ -217,11 +216,19 @@ def body(): return Div(
                                 },
                             ),
                             Input(type='file', id='uf', name='uf', style='display: none;'),
-                            Div(id='uploaded-image'),
+                            Div(
+                                id='uploaded-image',
+                            ),
                         ),
-                        Button('image to b64'),
-                        Textarea('text to embed in image'),
-                        Button('embed'),
+                        open='true',
+                    ),
+                    Hr(),
+                    Details(
+                        Summary('text to image'),
+                        Div(
+                            Textarea('text to embed in image'),
+                            Button('embed'),
+                        ),
                         open='true',
                     ),
                 ),
@@ -250,7 +257,10 @@ async def post(uw: UploadFile):
 @rt('/upload/image')
 async def post(uf: UploadFile):
     x = await uf.read()
-    return Img(src=f'data:image/png;base64,{base64.b64encode(x).decode()}')
+    return Div(
+        Img(id='uploaded-image-img', src=f'data:image/png;base64,{base64.b64encode(x).decode()}', style='max-width: 100px; max-height: 100px'),
+        Button('📋 as b64', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("uploaded-image-img").src)]', cls='outline'),
+    )
 
 # %%
 # wordlist expansion
