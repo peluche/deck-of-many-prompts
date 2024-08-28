@@ -111,6 +111,8 @@ def handle_selection(func):
     wrapper.__name__ = func.__name__
     return wrapper
 
+def wordlist(x: str = ''): return Textarea(x, id='wordlist', name='wordlist')
+
 def prompt(x: str = ''):
     return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
 
@@ -130,10 +132,6 @@ def filtered_template():
 
 def template_el(id: int):
     el = world['template'][id]
-    # return Div(
-    #     Span(el.prompt, hx_put=f'/prompt/template/{id}', hx_target=f'#prompt'),
-    #     id=f'template-{id}',
-    # )
     return Li(el.prompt, hx_put=f'/prompt/template/{id}', hx_target=f'#prompt', id=f'template-{id}')
 
 def template_list(): return Ul(*[template_el(i) for i in filtered_template()], id='template')
@@ -188,19 +186,30 @@ def body(): return Div(
                             Label("load wordlist", Select(
                                 Option('---', disabled=True, selected=True),
                                 *[Option(el.title, value=i) for i, el in world['wordlist'].items()],
-                                id='wordlist_id', name='wordlist_id', hx_get='/load_wordlist', hx_trigger='change', hx_target='#wordlist',
+                                id='wordlist_id', name='wordlist_id', hx_get='/load_wordlist', hx_trigger='change', hx_target='#wordlist', hx_swap='outerHTML',
                                 ),
                             ),
-                            Label('wordlist (one entry per line)', Textarea('', id='wordlist', name='wordlist')),
+                            # xxx
+                            Div(
+                                P('or drop wordlist here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload/wordlist', hx_trigger="postdrop", hx_target='#wordlist', hx_swap='outerHTML',
+                                    **{ 'hx-on:drop': 'event.preventDefault(); this.classList.remove("dragover"); document.getElementById("uw").files = event.dataTransfer.files; htmx.trigger(this, "postdrop");',
+                                        'hx-on:dragover': 'event.preventDefault(); this.classList.add("dragover");',
+                                        'hx-on:dragleave': 'event.preventDefault(); this.classList.remove("dragover");',
+                                    },
+                                ),
+                                Input(type='file', id='uw', name='uw', style='display: none;'),
+                            ),
+
+                            Label('wordlist (one entry per line)', wordlist()),
                             Button('expand', hx_post='/expand', hx_target='#history', hx_swap='outerHTML'),
                         ),
-                        # open='true',
+                        open='true',
                     ),
                     Hr(),
                     Details(
                         Summary('image'),
                         Div(
-                            P('drop image here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload', hx_trigger="postdrop", hx_target='#uploaded-image',
+                            P('drop image here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload/image', hx_trigger="postdrop", hx_target='#uploaded-image',
                                 **{ 'hx-on:drop': 'event.preventDefault(); this.classList.remove("dragover"); document.getElementById("uf").files = event.dataTransfer.files; htmx.trigger(this, "postdrop");',
                                     'hx-on:dragover': 'event.preventDefault(); this.classList.add("dragover");',
                                     'hx-on:dragleave': 'event.preventDefault(); this.classList.remove("dragover");',
@@ -230,19 +239,23 @@ def body(): return Div(
 def get(): return body()
 
 # %%
-# image
-@rt('/upload')
+# upload
+@rt('/upload/wordlist')
+async def post(uw: UploadFile):
+    x = await uw.read()
+    print(f'upload wordlist: {x=}')
+    return wordlist(x.decode())
+
+@rt('/upload/image')
 async def post(uf: UploadFile):
-    print(f'upload {uf=}')
     x = await uf.read()
-    # print(f'upload: {x=}')    
     return Img(src=f'data:image/png;base64,{base64.b64encode(x).decode()}')
 
 # %%
 # wordlist expansion
 @rt('/load_wordlist')
 def get(wordlist_id: int):
-    if wordlist_id in world['wordlist']: return world['wordlist'][wordlist_id].wordlist
+    if wordlist_id in world['wordlist']: return wordlist(world['wordlist'][wordlist_id].wordlist)
     return '<error loading wordlist>'
 
 def expand(prompt: str, marker: str, wordlist: str):
