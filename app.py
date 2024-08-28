@@ -355,7 +355,8 @@ def history_el(id: int):
 
 def filtered_history():
     return [i for i, el in world['history'].items() if (not world['starred_only'] or el.starred) \
-                                                        and world['search'].lower() in el.prompt.lower()]
+                                                        and (world['search'].lower() in el.prompt.lower()
+                                                             or world['search'].lower() in el.note.lower())]
 
 def history_list():
     return Div(*[history_el(i) for i in filtered_history()[::world['order']]], id='history')
