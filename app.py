@@ -1,6 +1,7 @@
 # %%
 from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, Form, Group, Input, P, Pre, Span, Style, Textarea
 from fasthtml.common import *
+from starlette.datastructures import UploadFile
 import copy
 import base64
 import random
@@ -10,15 +11,27 @@ from functools import wraps
 app, rt = fast_app(live=True, hdrs=[
     Style('''
     .xs {
-    border: 0;
-    margin: 0;
-    padding: 5px;
-    max-width: 50px;
-    min-width: 50px;
+        border: 0;
+        margin: 0;
+        padding: 5px;
+        max-width: 50px;
+        min-width: 50px;
+    }
+    .drag-and-drop {
+        height: 100px;
+        border: 2px dashed #ccc;
+        transition: background-color 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .dragover {
+        background: #eee;
     }
     '''),
     Script('''
     htmx.config.allowNestedOobSwaps = false;
+    /* handle textarea sub-selections */
     document.addEventListener('htmx:configRequest', (event) => {
         if (event.detail.elt.closest('form#prompt-form')) {
             const promptArea = document.getElementById('prompt');
@@ -181,15 +194,25 @@ def body(): return Div(
                             Label('wordlist (one entry per line)', Textarea('', id='wordlist', name='wordlist')),
                             Button('expand', hx_post='/expand', hx_target='#history', hx_swap='outerHTML'),
                         ),
-                        open='true',
+                        # open='true',
                     ),
                     Hr(),
                     Details(
                         Summary('image'),
-                        Div(P('drag and drop image')),
+                        Div(
+                            P('drop image here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload', hx_trigger="postdrop", hx_target='#uploaded-image',
+                                **{ 'hx-on:drop': 'event.preventDefault(); this.classList.remove("dragover"); document.getElementById("uf").files = event.dataTransfer.files; htmx.trigger(this, "postdrop");',
+                                    'hx-on:dragover': 'event.preventDefault(); this.classList.add("dragover");',
+                                    'hx-on:dragleave': 'event.preventDefault(); this.classList.remove("dragover");',
+                                },
+                            ),
+                            Input(type='file', id='uf', name='uf', style='display: none;'),
+                            Div(id='uploaded-image'),
+                        ),
                         Button('image to b64'),
                         Textarea('text to embed in image'),
                         Button('embed'),
+                        open='true',
                     ),
                 ),
                 style='flex: 1; max-width: 600px',
@@ -205,6 +228,15 @@ def body(): return Div(
 
 @rt('/')
 def get(): return body()
+
+# %%
+# image
+@rt('/upload')
+async def post(uf: UploadFile):
+    print(f'upload {uf=}')
+    x = await uf.read()
+    # print(f'upload: {x=}')    
+    return Img(src=f'data:image/png;base64,{base64.b64encode(x).decode()}')
 
 # %%
 # wordlist expansion
