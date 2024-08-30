@@ -5,6 +5,7 @@ from starlette.datastructures import UploadFile
 import copy
 import base64
 import random
+import string
 from dataclasses import dataclass
 from functools import wraps
 
@@ -177,6 +178,7 @@ def body(): return Div(
                             SGroup(Button('upper', hx_post='/upper'), Button('❌', hx_post='/lower', cls='xs secondary')),
                             SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
                             SGroup(Button('reverse', hx_post='/reverse'), Button('❌', hx_post='/reverse', cls='xs secondary')),
+                            SGroup(Button('NATO', hx_post='/nato'), Button('❌', hx_post='/natod', cls='xs secondary')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
                         open='true',
@@ -614,6 +616,41 @@ def post(x: str): return lowerm(x)
 @rt('/reverse')
 @handle_selection
 def post(x: str): return ''.join(reversed(x))
+
+# %%
+# NATO alphabet
+nato_encode = {
+    'A': 'Alpha', 'B': 'Bravo', 'C': 'Charlie', 'D': 'Delta', 'E': 'Echo',
+    'F': 'Foxtrot', 'G': 'Golf', 'H': 'Hotel', 'I': 'India', 'J': 'Juliett',
+    'K': 'Kilo', 'L': 'Lima', 'M': 'Mike', 'N': 'November', 'O': 'Oscar',
+    'P': 'Papa', 'Q': 'Quebec', 'R': 'Romeo', 'S': 'Sierra', 'T': 'Tango',
+    'U': 'Uniform', 'V': 'Victor', 'W': 'Whiskey', 'X': 'X-ray', 'Y': 'Yankee',
+    'Z': 'Zulu', '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+    '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', ' ': ' ',
+    }
+nato_decode = {v: k for k, v in nato_encode.items()}
+
+def nato(x: str):
+    encoded = ' '.join(nato_encode.get(c.upper(), c) for c in x)
+    unknown = repr(list(c for c in x if c.upper() not in nato_encode))
+    return encoded, unknown
+
+def natod(x: str):
+    decoded = ''.join(nato_decode.get(m, m) for m in x.split()).lower()
+    unknown = repr(list(m for m in x.split() if m not in morse_decode))
+    return decoded, unknown
+
+@rt('/nato')
+@handle_selection
+def post(x: str):
+    encoded, unknown = nato(x) # TODO
+    return encoded
+
+@rt('/natod')
+@handle_selection
+def post(x: str):
+    decoded, unknown = natod(x) # TODO
+    return decoded
 
 # %%
 serve()
