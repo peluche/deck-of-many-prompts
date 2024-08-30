@@ -176,9 +176,10 @@ def body(): return Div(
                             SGroup(Button('leet', hx_post='/leet'), Button('❌', hx_post='/leetd', cls='xs secondary')),
                             SGroup(Button('upper', hx_post='/upper'), Button('❌', hx_post='/lower', cls='xs secondary')),
                             SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
+                            SGroup(Button('reverse', hx_post='/reverse'), Button('❌', hx_post='/reverse', cls='xs secondary')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
-                        # open='true',
+                        open='true',
                     ),
                     Hr(),
                     Details(
@@ -378,7 +379,7 @@ def put(q: str):
     return history_list()
 
 @rt('/history')
-def post(x:str):
+def post(x: str):
     world['history'][world['count']] = Prompt(x)
     world['count'] += 1
     return history_list()
@@ -439,13 +440,13 @@ def morsed(x: str):
 
 @rt('/morse')
 @handle_selection
-def post(x:str):
+def post(x: str):
     encoded, unknown = morse(x) # TODO
     return encoded
 
 @rt('/morsed')
 @handle_selection
-def post(x:str):
+def post(x: str):
     decoded, unknown = morsed(x) # TODO
     return decoded
 
@@ -461,11 +462,11 @@ def asciid(x: str):
 
 @rt('/ascii')
 @handle_selection
-def post(x:str): return ascii(x)
+def post(x: str): return ascii(x)
 
 @rt('/asciid')
 @handle_selection
-def post(x:str):
+def post(x: str):
     decoded, unknown = asciid(x) # TODO
     return decoded
 
@@ -501,11 +502,11 @@ def binaryd(x: str):
 
 @rt('/binary')
 @handle_selection
-def post(x:str): return binary(x)
+def post(x: str): return binary(x)
 
 @rt('/binaryd')
 @handle_selection
-def post(x:str):
+def post(x: str):
     decoded, unknown = binaryd(x) # TODO
     return decoded
 
@@ -523,7 +524,7 @@ def rot13(x: str):
 
 @rt('/rot13')
 @handle_selection
-def post(x:str):
+def post(x: str):
     encoded, unknown = rot13(x) # TODO
     return encoded
 
@@ -544,11 +545,11 @@ def spacesd(x: str):
 
 @rt('/spaces')
 @handle_selection
-def post(x:str): return spaces(x)
+def post(x: str): return spaces(x)
 
 @rt('/spacesd')
 @handle_selection
-def post(x:str): return spacesd(x)
+def post(x: str): return spacesd(x)
 
 # %%
 # leet
@@ -577,15 +578,15 @@ def leetd(x: str): return ''.join(leet_decode.get(c, c) for c in x)
 
 @rt('/leet')
 @handle_selection
-def post(x:str): return leet(x)
+def post(x: str): return leet(x)
 
 @rt('/leetm')
 @handle_selection
-def post(x:str): return leetm(x)
+def post(x: str): return leetm(x)
 
 @rt('/leetd')
 @handle_selection
-def post(x:str): return leetd(x)
+def post(x: str): return leetd(x)
 
 # %%
 # upper / lower
@@ -594,19 +595,25 @@ def lowerm(x: str): return ''.join(c.lower() if random.random() > 0.8 else c for
 
 @rt('/upper')
 @handle_selection
-def post(x:str): return x.upper()
+def post(x: str): return x.upper()
 
 @rt('/lower')
 @handle_selection
-def post(x:str): return x.lower()
+def post(x: str): return x.lower()
 
 @rt('/upperm')
 @handle_selection
-def post(x:str): return upperm(x)
+def post(x: str): return upperm(x)
 
 @rt('/lowerm')
 @handle_selection
-def post(x:str): return lowerm(x)
+def post(x: str): return lowerm(x)
+
+# %%
+# reverse
+@rt('/reverse')
+@handle_selection
+def post(x: str): return ''.join(reversed(x))
 
 # %%
 serve()
