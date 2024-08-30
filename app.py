@@ -169,6 +169,7 @@ def body(): return Div(
                             SGroup(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs secondary')),
                             SGroup(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs secondary')),
                             SGroup(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs secondary')),
+                            SGroup(Button('hex', hx_post='/hex'), Button('❌', hx_post='/hexd', cls='xs secondary')),
                             SGroup(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd', cls='xs secondary')),
                             SGroup(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13', cls='xs secondary')),
                             SGroup(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd', cls='xs secondary')),
@@ -466,6 +467,26 @@ def post(x:str): return ascii(x)
 @handle_selection
 def post(x:str):
     decoded, unknown = asciid(x) # TODO
+    return decoded
+
+# %%
+# hex
+def hex_encode(x: str): return ' '.join(f'{ord(c):02x}' for c in x)
+def hex_decode(x: str):
+    decoded, unknown = [], []
+    for h in x.split():
+        try: decoded.append(chr(int(h, 16)))
+        except Exception: unknown.append(h)
+    return ''.join(decoded), repr(unknown)
+
+@rt('/hex')
+@handle_selection
+def post(x: str): return hex_encode(x)
+
+@rt('/hexd')
+@handle_selection
+def post(x: str):
+    decoded, unknown = hex_decode(x)  # TODO
     return decoded
 
 # %%
