@@ -170,6 +170,7 @@ def body(): return Div(
                         Div(
                             SGroup(Button('b64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs secondary')),
                             SGroup(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs secondary')),
+                            SGroup(Button('braille', hx_post='/braille'), Button('❌', hx_post='/brailled', cls='xs secondary')),
                             SGroup(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs secondary')),
                             SGroup(Button('hex', hx_post='/hex'), Button('❌', hx_post='/hexd', cls='xs secondary')),
                             SGroup(Button('urlencode', hx_post='/urlencode'), Button('❌', hx_post='/urlencoded', cls='xs secondary')),
@@ -629,7 +630,7 @@ nato_encode = {
     'U': 'Uniform', 'V': 'Victor', 'W': 'Whiskey', 'X': 'X-ray', 'Y': 'Yankee',
     'Z': 'Zulu', '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
     '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', ' ': ' ',
-    }
+}
 nato_decode = {v: k for k, v in nato_encode.items()}
 
 def nato(x: str):
@@ -664,6 +665,72 @@ def post(x: str): return urllib.parse.quote(x)
 @rt('/urlencoded')
 @handle_selection
 def post(x: str): return urllib.parse.unquote(x)
+
+# %%
+# braille (see. https://www.pharmabraille.com/pharmaceutical-braille/the-braille-alphabet/)
+
+braille_letter_encode = {
+    'a': '⠁', 'b': '⠃', 'c': '⠉', 'd': '⠙', 'e': '⠑', 'f': '⠋', 'g': '⠛',
+    'h': '⠓', 'i': '⠊', 'j': '⠚', 'k': '⠅', 'l': '⠇', 'm': '⠍', 'n': '⠝',
+    'o': '⠕', 'p': '⠏', 'q': '⠟', 'r': '⠗', 's': '⠎', 't': '⠞', 'u': '⠥',
+    'v': '⠧', 'w': '⠺', 'x': '⠭', 'y': '⠽', 'z': '⠵', ',': '⠂', ';': '⠆',
+    ':': '⠒', '.': '⠲', '?': '⠦', '!': '⠖', "'": '⠄', '-': '⠤', ' ': ' ',
+    # '\n': '\n', # not official but I think it's convenient
+    '': '⠰', # make life easier by translating the modifier to empty
+}
+braille_letter_decode = {v: k for k, v in braille_letter_encode.items()}
+braille_num_encode = {
+    '1': '⠁', '2': '⠃', '3': '⠉', '4': '⠙', '5': '⠑', '6': '⠋', '7': '⠛',
+    '8': '⠓', '9': '⠊', '0': '⠚', '.': '⠲',
+    '': '⠼', # make life easier by translating the modifier to empty
+}
+braille_num_decode = {v: k for k, v in braille_num_encode.items()}
+braille_implicit_num_mode_ender = ' .,;:!?-'
+# TODO: implement bi-grams like: ()/\"
+
+def braille(x: str):
+    encoded, unknown = [], []
+    encoder = braille_letter_encode
+    for cr in x:
+        c = cr.lower()
+        if c in encoder: pass
+        elif c in braille_letter_encode:
+            encoder = braille_letter_encode
+            if c not in braille_implicit_num_mode_ender: encoded.append('⠰')
+        elif c in braille_num_encode:
+            encoder = braille_num_encode
+            encoded.append('⠼')
+        # not official but I think it's convenient
+        elif c == '\n':
+            encoder = braille_letter_encode
+            encoded.append('\n')
+        else: unknown.append(cr)
+        encoded.append(encoder.get(c, ''))
+    return ''.join(encoded), repr(unknown)
+
+def brailled(x: str):
+    encoded, unknown = [], []
+    modes = {'⠰': braille_letter_decode, '⠼': braille_num_decode}
+    modes = modes | {braille_letter_encode[c]: braille_letter_decode for c in braille_implicit_num_mode_ender}
+    modes = modes | {'\n': braille_letter_decode} # not official
+    encoder = braille_letter_decode
+    for c in x:
+        if c in modes: encoder = modes[c]
+        encoded.append(encoder.get(c, c))
+        if c not in encoder: unknown.append(c)
+    return ''.join(encoded), repr(unknown)
+
+@rt('/braille')
+@handle_selection
+def post(x: str):
+    encoded, unknown = braille(x) # TODO
+    return encoded
+
+@rt('/brailled')
+@handle_selection
+def post(x: str):
+    encoded, unknown = brailled(x) # TODO
+    return encoded
 
 # %%
 serve()
