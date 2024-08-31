@@ -363,7 +363,10 @@ def put():
 def put(id: int, note: str):
     el = world['history'][id]
     el.note = note
-    return history_el(id)
+    return history_list()
+
+@rt('/empty')
+def get(): return ''
 
 @rt('/history/note/{id}')
 def get(id: int):
@@ -371,7 +374,7 @@ def get(id: int):
     hdr = Div(Button(rel='prev'), P('note'))
     ftr = Div(
         Button('Cancel', cls='secondary'),
-        Button('Save', hx_put=f'/history/note/{id}', hx_target=f'#history-{id}', hx_swap='outerHTML'),
+        Button('Save', hx_put=f'/history/note/{id}', hx_target=f'#history', hx_swap='outerHTML'),
         style='float: right')
     return Form(
         DialogX(
@@ -380,15 +383,17 @@ def get(id: int):
                 Textarea(el.note, id=f'note-{id}', name='note', style='height: 300px'),
             ),
             header=hdr, footer=ftr, open=True,
-        )
+        ),
+        hx_get='/empty', hx_target='#history-dialog',
     )
 
 def history_el(id: int):
     el = world['history'][id]
     return Div(
+        Div(id='history-dialog'),
         A('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
         A('🌑🌕'[el.starred], hx_put=f'/history/{id}/star', hx_target=f'#history-{id}', style='text-decoration: none'),
-        A('📝🗒️'[el.note == ''], hx_get=f'/history/note/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
+        A('📝🗒️'[el.note == ''], hx_get=f'/history/note/{id}', hx_target=f'#history-dialog', style='text-decoration: none'),
         Span(slug(el.prompt, maxlen=100), hx_put=f'/prompt/{id}', hx_target=f'#prompt'),
         id=f'history-{id}',
     )
