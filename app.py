@@ -686,26 +686,35 @@ braille_num_encode = {
 }
 braille_num_decode = {v: k for k, v in braille_num_encode.items()}
 braille_implicit_num_mode_ender = ' .,;:!?-'
-# TODO: implement bi-grams like: ()/\"
+braille_bigram_encode = {
+    '“': '⠄⠶', '“': '⠘⠦', '”': '⠘⠴', '‘': '⠄⠦', '’': '⠄⠴', '(': '⠐⠣',
+    ')': '⠐⠜', '/': '⠸⠌', '\\': '⠸⠡',
+}
+braille_bigram_decode = {v: k for k, v in braille_bigram_encode.items()}
 
 def braille(x: str):
     encoded, unknown = [], []
     encoder = braille_letter_encode
     for cr in x:
         c = cr.lower()
-        if c in encoder: pass
+        if c in encoder: encoded.append(encoder[c])
         elif c in braille_letter_encode:
             encoder = braille_letter_encode
             if c not in braille_implicit_num_mode_ender: encoded.append('⠰')
+            encoded.append(encoder[c])
         elif c in braille_num_encode:
             encoder = braille_num_encode
             encoded.append('⠼')
+            encoded.append(encoder[c])
+        elif c in braille_bigram_encode:
+            encoded.append(braille_bigram_encode[c])
         # not official but I think it's convenient
         elif c == '\n':
             encoder = braille_letter_encode
             encoded.append('\n')
-        else: unknown.append(cr)
-        encoded.append(encoder.get(c, ''))
+        else:
+            encoded.append(cr)
+            unknown.append(cr)
     return ''.join(encoded), repr(unknown)
 
 def brailled(x: str):
@@ -714,7 +723,15 @@ def brailled(x: str):
     modes = modes | {braille_letter_encode[c]: braille_letter_decode for c in braille_implicit_num_mode_ender}
     modes = modes | {'\n': braille_letter_decode} # not official
     encoder = braille_letter_decode
-    for c in x:
+    bigrams = list(f'{a}{b}' for a, b in zip(' ' + x, x))
+    for c, bigram in zip(x, bigrams):
+        # dirty special case for bigrams
+        if bigram in braille_bigram_decode:
+            encoded.pop()
+            unknown.pop()
+            encoded.append(braille_bigram_decode[bigram])
+            continue
+        # normal branch
         if c in modes: encoder = modes[c]
         encoded.append(encoder.get(c, c))
         if c not in encoder: unknown.append(c)
