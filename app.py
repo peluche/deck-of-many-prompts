@@ -4,11 +4,15 @@ from fasthtml.common import *
 from starlette.datastructures import UploadFile
 import copy
 import base64
+import math
 import random
 import string
 import urllib
 from dataclasses import dataclass
 from functools import wraps
+from PIL import Image, ImageDraw, ImageFont
+from io import BytesIO
+
 
 app, rt = fast_app(live=True, hdrs=[
     Style('''
@@ -189,7 +193,7 @@ def body(): return Div(
                             SGroup(Button('NATO', hx_post='/nato'), Button('❌', hx_post='/natod', cls='xs secondary')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
-                        open='true',
+                        # open='true',
                     ),
                     Hr(),
                     Details(
@@ -232,16 +236,24 @@ def body(): return Div(
                                 id='uploaded-image',
                             ),
                         ),
-                        open='true',
+                        # open='true',
                     ),
                     Hr(),
                     Details(
                         Summary('text to image'),
                         Div(
-                            Textarea('text to embed in image'),
-                            Button('embed'),
+                            Input(name='text_to_img', hx_post='/text2img', hx_target='#text-to-img', hx_trigger='keyup[key=="Enter"]'),
+                            Grid(
+                                P('text'), P('background'), P(),
+                            ),
+                            Grid(
+                                Input(type="color", name='text_color', value='#ffffff'),
+                                Input(type="color", name='bg_color', value='#000000'),
+                                Button('generate', hx_post='/text2img', hx_target='#text-to-img'),
+                            ),
                         ),
-                        open='true',
+                        Div(id='text-to-img'),
+                        # open='true',
                     ),
                 ),
                 style='flex: 1; max-width: 600px',
@@ -753,6 +765,64 @@ def post(x: str):
 def post(x: str):
     encoded, unknown = brailled(x) # TODO
     return encoded
+
+# %%
+# text to image
+def wrap_toks(toks, font, max_width, sep=' ', depth=0):
+    if depth > 1: return [] # this should never happen, abort
+    # split tok that are bigger than a line
+    words = []
+    for tok in toks:
+        if font.getlength(tok) <= max_width:
+            words.append(tok)
+            continue
+        words.extend(wrap_toks(tok, font, max_width, sep='', depth=depth + 1))
+    # merge words into lines fitting the width
+    res, curr = [], []
+    for word in words:
+        line = sep.join(curr + [word])
+        if font.getlength(line) <= max_width:
+            curr.append(word)
+            continue
+        res.append(sep.join(curr))
+        curr = [word]
+    res.append(sep.join(curr))
+    return res
+
+def wrap_text(text, font, max_width):
+    return wrap_toks(text.split(), font, max_width)
+
+def get_height(lines, font, line_space):
+    height = 0
+    for i, line in enumerate(lines):
+        bbox = font.getbbox(line)
+        height += bbox[3] - bbox[1]
+        if i > 0: height += line_space
+    return math.ceil(height)
+
+def text2img(text, text_color=(0, 0, 0), bg_color=(255, 255, 255), padding=20, width=800, height=600, font_size=60, line_space=10, center=True):
+    font = ImageFont.load_default().font_variant(size=font_size)
+    lines = wrap_text(text, font, max_width=width - 2 * padding)
+    text_height = get_height(lines, font, line_space)
+    height = max(height, text_height + 2 * padding)
+    img = Image.new('RGB', (width, height), color=bg_color)
+    draw = ImageDraw.Draw(img)
+    y_text = (height - text_height) / 2
+    for line in lines:
+        bbox = font.getbbox(line)
+        line_width = bbox[2] - bbox[0]
+        x_text = (width - line_width) / 2 if center else padding
+        draw.text((x_text, y_text - bbox[1]), line, font=font, fill=text_color)
+        y_text += bbox[3] - bbox[1] + line_space
+    return img
+
+@rt('/text2img')
+def post(text_to_img: str, text_color: str, bg_color: str):
+    img = text2img(text_to_img, text_color=text_color, bg_color=bg_color)
+    buffered = BytesIO()
+    img.save(buffered, format='png')
+    img = buffered.getvalue()
+    return Img(src=f'data:image/png;base64,{base64.b64encode(img).decode()}', style='max-width: 100px; max-height: 100px')
 
 # %%
 serve()
