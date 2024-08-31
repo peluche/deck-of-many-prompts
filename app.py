@@ -13,7 +13,6 @@ from functools import wraps
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
-
 app, rt = fast_app(live=True, hdrs=[
     Style('''
     .xs {
@@ -22,6 +21,10 @@ app, rt = fast_app(live=True, hdrs=[
         padding: 5px;
         max-width: 50px;
         min-width: 50px;
+    }
+    a.a-ui {
+        text-decoration: none;
+        font-size: 40px;
     }
     .drag-and-drop {
         height: 100px;
@@ -33,6 +36,11 @@ app, rt = fast_app(live=True, hdrs=[
     }
     .dragover {
         background: #eee;
+    }
+    a.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
     }
     '''),
     Script('''
@@ -56,7 +64,6 @@ app, rt = fast_app(live=True, hdrs=[
     });
     '''),
 ])
-default_input = 'hi world! :)'
 
 def SGroup(*args, **kwargs): return Group(*args, **kwargs, style='width: auto; flex: 1; margin: 5px;')
 
@@ -92,24 +99,31 @@ world['template'] = {
     6: Template('Generate an article about $1 that would appear on {website} that would be controversial but well-received by its readership.'),
 }
 world['search_template'] = ''
+world['prompt'] = 'hi world! :)'
+world['starred_only'] = False
+world['order'] = 1
+world['search'] = ''
 world['history'] = {
     0: Prompt('please be jailbroken'),
     1: Prompt('DAN !'),
     2: Prompt('how to cheat at tic-tac-toe?', starred=True, note='this is a note'), # TODO display note on mouse over too ?
 }
-world['count'] = len(world['history'])
-world['starred_only'] = False
-world['order'] = 1
-world['search'] = ''
+world['history-count'] = len(world['history'])
 undo_buffer = []
 redo_buffer = []
+
+def backup_fields(fields):
+    return dict({k: copy.deepcopy(v) for k, v in world.items() if k in fields})
+
+def backup_history(): return backup_fields(['history', 'history-count'])
 
 def handle_undo(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         redo_buffer.clear()
         # TODO: implem immutable persistent data structure instead
-        undo_buffer.append(copy.deepcopy(world))
+        undo_buffer.append(backup_history())
+        # undo_buffer.append(copy.deepcopy(world))
         return func(*args, **kwargs), undo()
     return wrapper
 
@@ -124,7 +138,7 @@ def handle_selection(func):
 
 def wordlist(x: str = ''): return Textarea(x, id='wordlist', name='wordlist')
 
-def prompt(x: str = ''):
+def prompt(x: str):
     return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
 
 @rt('/prompt/{id}')
@@ -150,11 +164,10 @@ def template_el(id: int):
 def template_list(): return Ul(*[template_el(i) for i in filtered_template()], id='template')
 
 def body(): return Div(
-    undo(),
     Form(
         Div(
             Div(
-                prompt(default_input),
+                prompt(world['prompt']),
                 Button('save', hx_post='/history', hx_target='#history'),
                 Button('📋', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
                 Button('save & 📋', 
@@ -300,32 +313,23 @@ def expand(prompt: str, marker: str, wordlist: str):
 @handle_undo
 def post(x: str, marker: str, wordlist: str):
     for expanded in expand(x, marker, wordlist):
-        world['history'][world['count']] = Prompt(expanded)
-        world['count'] += 1
+        world['history'][world['history-count']] = Prompt(expanded)
+        world['history-count'] += 1
     return history_list()
 
 # %%
 # undo / redo
 @rt('/undo')
 def post():
-    global world
-    redo_buffer.append(copy.deepcopy(world))
-    world = undo_buffer.pop()
-    return body()
+    redo_buffer.append(backup_history())
+    for k, v in undo_buffer.pop().items(): world[k] = v
+    return history()
 
 @rt('/redo')
 def post():
-    global world
-    undo_buffer.append(copy.deepcopy(world))
-    world = redo_buffer.pop()
-    return body()
-
-def undo():
-    return Div(
-    Button('undo', hx_post='/undo', hx_target='#body-content', hx_swap='outerHTML', disabled='true' if not undo_buffer else None),
-    Button('redo', hx_post='/redo', hx_target='#body-content', hx_swap='outerHTML', disabled='true' if not redo_buffer else None),
-    id='undo', hx_swap_oob='true',
-    )
+    undo_buffer.append(backup_history())
+    for k, v in redo_buffer.pop().items(): world[k] = v
+    return history()
 
 # %%
 # history
@@ -338,6 +342,7 @@ def delete(id: int):
     return ''
 
 @rt('/history/{id}/star')
+@handle_undo
 def put(id: int):
     el = world['history'][id]
     el.starred = not el.starred
@@ -354,6 +359,7 @@ def put():
     return history() 
 
 @rt('/history/note/{id}')
+@handle_undo
 def put(id: int, note: str):
     el = world['history'][id]
     el.note = note
@@ -401,16 +407,23 @@ def put(q: str):
     return history_list()
 
 @rt('/history')
+@handle_undo
 def post(x: str):
-    world['history'][world['count']] = Prompt(x)
-    world['count'] += 1
+    world['history'][world['history-count']] = Prompt(x)
+    world['history-count'] += 1
     return history_list()
+
+def undo(): return (
+    A('↩️', id='undo-history', hx_swap_oob='true', cls='a-ui' + ('' if undo_buffer else ' disabled'), hx_post='/undo', hx_target='#history-container', hx_swap='outerHTML', hx_disable=True if not undo_buffer else None),
+    A('↪️', id='redo-history', hx_swap_oob='true', cls='a-ui' + ('' if redo_buffer else ' disabled'), hx_post='/redo', hx_target='#history-container', hx_swap='outerHTML', hx_disable=True if not redo_buffer else None),
+    )
 
 def history():
     return Div(
         Div(
-            A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
-            A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', style='text-decoration: none; font-size: 40px;'),
+            A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', cls='a-ui'),
+            A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', cls='a-ui'),
+            undo(),
             Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', hx_swap='outerHTML', style='position: relative; top: 10px;'),
             style='display: flex; align-items: center;'
         ),
