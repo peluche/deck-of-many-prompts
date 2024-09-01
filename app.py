@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from translate import Translator
 
 app, rt = fast_app(live=True, hdrs=[
+    Link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css', type='text/css'),
     Style('''
     .xs {
         border: 0;
@@ -43,8 +44,26 @@ app, rt = fast_app(live=True, hdrs=[
         cursor: not-allowed;
         pointer-events: none;
     }
+    .icon-link {
+        text-decoration: none;
+        color: inherit;
+        font-size: 2rem;
+    }
+    .icon-link:hover {
+        color: #0172ad;
+    }
+    [data-theme="dark"] {
+        .icon-link:hover {
+            color: #fff;
+        }
+    }
     '''),
     Script('''
+    /* dark/light mode */
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    /* change htmx default */
     htmx.config.allowNestedOobSwaps = false;
     /* handle textarea sub-selections */
     document.addEventListener('htmx:configRequest', (event) => {
@@ -179,8 +198,20 @@ def translate_list(): return Div(
     style='display: flex; flex-wrap: wrap;',
     ),
 
+# Input(type='checkbox', id='darkModeToggle', role='switch', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
 
-def body(): return Div(
+def navbar(): return (
+    Title('Deck of Many Prompts'),
+    Nav(
+        H3('Deck of Many Prompts'),
+        Div(
+            A(I(cls='fab fa-github fa-fw', role='img'), href='https://github.com/peluche', cls='icon-link'),
+            A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/', cls='icon-link'),
+            A(I(cls='fas fa-adjust fa-fw'), cls='icon-link', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
+        )
+    ))
+
+def body(): return *navbar(), Div(
     Form(
         Div(
             Div(
