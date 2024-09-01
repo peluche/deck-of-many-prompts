@@ -203,12 +203,13 @@ def translate_list(): return Div(
 def navbar(): return (
     Title('Deck of Many Prompts'),
     Nav(
-        H3('Deck of Many Prompts'),
+        H3('Deck of Many Prompts', style='padding-top: 5px; margin-top: 5px;'),
         Div(
             A(I(cls='fab fa-github fa-fw', role='img'), href='https://github.com/peluche', cls='icon-link'),
             A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/', cls='icon-link'),
             A(I(cls='fas fa-adjust fa-fw'), cls='icon-link', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
-        )
+        ),
+        style='padding: 0px 20px',
     ))
 
 def body(): return *navbar(), Div(
