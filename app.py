@@ -10,8 +10,9 @@ import string
 import urllib
 from dataclasses import dataclass
 from functools import wraps
-from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+from translate import Translator
 
 app, rt = fast_app(live=True, hdrs=[
     Style('''
@@ -103,6 +104,16 @@ world['prompt'] = 'hi world! :)'
 world['starred_only'] = False
 world['order'] = 1
 world['search'] = ''
+world['langs'] = {
+    'fr': 'fr',
+    'es': 'es',
+    'it': 'it',
+    'de': 'de-de',
+    'cn': 'zh-cn',
+    'jp': 'ja',
+    'kr': 'ko-kr',
+    'in': 'hi',
+}
 world['history'] = {
     0: Prompt('please be jailbroken'),
     1: Prompt('DAN !'),
@@ -162,6 +173,12 @@ def template_el(id: int):
     return Li(slug(el.prompt), hx_put=f'/prompt/template/{id}', hx_target=f'#prompt', id=f'template-{id}')
 
 def template_list(): return Ul(*[template_el(i) for i in filtered_template()], id='template')
+
+def translate_list(): return Div(
+    *(SGroup(Button(k, hx_post=f'/translate/en/{v}'), Button('❌', hx_post=f'/translate/{v}/en', cls='xs secondary')) for k, v in world['langs'].items()),
+    style='display: flex; flex-wrap: wrap;',
+    ),
+
 
 def body(): return Div(
     Form(
@@ -236,6 +253,12 @@ def body(): return Div(
                     ),
                     Hr(),
                     Details(
+                        Summary('translate (low quality API 💩🤮)'),
+                        translate_list(),
+                        # open='true',
+                    ),
+                    Hr(),
+                    Details(
                         Summary('image'),
                         Div(
                             P('drop image here', cls='drag-and-drop', hx_encoding="multipart/form-data", hx_post='/upload/image', hx_trigger="postdrop", hx_target='#uploaded-image',
@@ -296,7 +319,7 @@ async def post(uf: UploadFile):
     x = await uf.read()
     return Div(
         Img(id='uploaded-image-img', src=f'data:image/png;base64,{base64.b64encode(x).decode()}', style='max-width: 100px; max-height: 100px'),
-        Button('📋 as b64', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("uploaded-image-img").src)]', cls='outline'),
+        Button('📋 as base64', hx_trigger='click[navigator.clipboard.writeText(document.getElementById("uploaded-image-img").src)]', cls='outline'),
     )
 
 # %%
@@ -443,7 +466,7 @@ def b64d(x: str): return base64.b64decode(x.encode()).decode()
 
 @rt('/b64')
 @handle_selection
-def post(x:str): return b64(x)
+def post(x: str): return b64(x)
 
 @rt('/b64d')
 @handle_selection
@@ -841,6 +864,23 @@ def post(text_to_img: str, text_color: str, bg_color: str):
     img.save(buffered, format='png')
     img = buffered.getvalue()
     return Img(src=f'data:image/png;base64,{base64.b64encode(img).decode()}', style='max-width: 100px; max-height: 100px')
+
+# %%
+# translate
+# TODO: replace with a decorator that take extra args as a param
+def handle_selection_alt(func):
+    # intentionally skip @wraps to mess with the signature
+    def wrapper(x: str, prefix: str, selected: str, suffix: str, from_lang: str, to_lang: str):
+        if selected == '': return prompt(func(x, from_lang=from_lang, to_lang=to_lang))
+        return prompt(f'{prefix}{func(selected, from_lang=from_lang, to_lang=to_lang)}{suffix}')
+    # @rt(...) needs the func name to infer the method (get/post/...) 
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+@rt('/translate/{from_lang}/{to_lang}')
+@handle_selection_alt
+def post(x: str, from_lang: str, to_lang: str):
+    return Translator(from_lang=from_lang, to_lang=to_lang).translate(x)
 
 # %%
 serve()
