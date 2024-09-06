@@ -4,6 +4,7 @@ from fasthtml.common import *
 from starlette.datastructures import UploadFile
 import copy
 import base64
+import json
 import math
 import random
 import string
@@ -101,6 +102,13 @@ class Prompt:
     prompt: str
     starred: bool = False
     note: str = ''
+    # for json serialization    
+    def to_dict(self):
+        return {
+            'prompt': self.prompt,
+            'starred': self.starred,
+            'note': self.note
+        }
 
 world = {}
 world['wordlist'] = {
@@ -389,6 +397,14 @@ def post():
 # %%
 # history
 
+@rt('/history/dl')
+def get():
+    json_string = json.dumps([prompt.to_dict() for prompt in world['history'].values()])
+    response = Response(content=json_string)
+    response.headers["Content-Disposition"] = 'attachment; filename="data.json"'
+    response.headers["Content-Type"] = "application/json"    
+    return response
+
 @rt('/history/{id}')
 @handle_undo
 def delete(id: int):
@@ -484,6 +500,7 @@ def history():
             A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', cls='a-ui'),
             A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', cls='a-ui'),
             undo(),
+            A('💾', href='history/dl', cls='a-ui'),
             Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', hx_swap='outerHTML', style='position: relative; top: 10px;'),
             style='display: flex; align-items: center;'
         ),
