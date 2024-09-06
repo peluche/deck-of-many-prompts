@@ -198,11 +198,12 @@ def put(qt: str):
 def slug(x: str, maxlen=50): return x[:maxlen] + (' [...]' if len(x) > maxlen else '')
 
 def filtered_template():
-    return [i for i, el in world['template'].items() if world['search_template'].lower() in el.prompt.lower()]
+    return [i for i, el in world['template'].items() if world['search_template'].lower() in el.prompt.lower() \
+                                                        or world['search_template'].lower() in el.title.lower()]
 
 def template_el(id: int):
     el = world['template'][id]
-    return Li(slug(el.prompt), hx_put=f'/prompt/template/{id}', hx_target=f'#prompt', id=f'template-{id}')
+    return Li(slug(el.title), hx_put=f'/prompt/template/{id}', hx_target=f'#prompt', id=f'template-{id}')
 
 def template_list(): return Ul(*[template_el(i) for i in filtered_template()], id='template')
 
