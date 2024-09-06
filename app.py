@@ -261,6 +261,7 @@ def body(): return *navbar(), Div(
                             SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
                             SGroup(Button('reverse', hx_post='/reverse'), Button('❌', hx_post='/reverse', cls='xs secondary')),
                             SGroup(Button('NATO', hx_post='/nato'), Button('❌', hx_post='/natod', cls='xs secondary')),
+                            SGroup(Button('disemvowel', hx_post='/disemvowel')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
                         # open='true',
@@ -726,6 +727,12 @@ def post(x: str): return lowerm(x)
 @rt('/reverse')
 @handle_selection
 def post(x: str): return ''.join(reversed(x))
+
+# %%
+# disemvowel
+@rt('/disemvowel')
+@handle_selection
+def post(x: str): return ''.join(c for c in x if c not in 'aeiouyAEIOUY')
 
 # %%
 # NATO alphabet
