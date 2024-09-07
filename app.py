@@ -1,19 +1,19 @@
 # %%
+from dataclasses import dataclass
+from fasthtml.common import * # TODO: remove when dev is over
 from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, Form, Group, Input, P, Pre, Span, Style, Textarea
-from fasthtml.common import *
+from functools import wraps
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 from starlette.datastructures import UploadFile
-import copy
+from translate import Translator
 import base64
+import copy
 import json
 import math
 import random
 import string
 import urllib
-from dataclasses import dataclass
-from functools import wraps
-from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
-from translate import Translator
 
 app, rt = fast_app(live=True, hdrs=[
     Link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css', type='text/css'),
@@ -104,11 +104,10 @@ class Prompt:
     starred: bool = False
     note: str = ''
     # for json serialization    
-    def to_dict(self):
-        return {
-            'prompt': self.prompt,
-            'starred': self.starred,
-            'note': self.note
+    def to_dict(self): return {
+        'prompt': self.prompt,
+        'starred': self.starred,
+        'note': self.note
         }
 
 world = {}
@@ -161,6 +160,7 @@ undo_buffer = []
 redo_buffer = []
 
 def backup_fields(fields):
+    # TODO: implem immutable persistent data structure instead
     return dict({k: copy.deepcopy(v) for k, v in world.items() if k in fields})
 
 def backup_history(): return backup_fields(['history', 'history-count'])
@@ -169,9 +169,7 @@ def handle_undo(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         redo_buffer.clear()
-        # TODO: implem immutable persistent data structure instead
         undo_buffer.append(backup_history())
-        # undo_buffer.append(copy.deepcopy(world))
         return func(*args, **kwargs), undo()
     return wrapper
 
@@ -189,7 +187,7 @@ def wordlist(x: str = ''): return Textarea(x, id='wordlist', name='wordlist')
 def prompt(x: str):
     return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
 
-@rt('/prompt/{id}')
+@rt('/prompt/history/{id}')
 def put(id: int): return prompt(world['history'][id].prompt)
 
 @rt('/prompt/template/{id}')
@@ -216,8 +214,6 @@ def translate_list(): return Div(
     *(SGroup(Button(k, hx_post=f'/translate/en/{v}'), Button('❌', hx_post=f'/translate/{v}/en', cls='xs secondary')) for k, v in world['langs'].items()),
     style='display: flex; flex-wrap: wrap;',
     ),
-
-# Input(type='checkbox', id='darkModeToggle', role='switch', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
 
 def navbar(): return (
     Title('Deck of Many Prompts'),
@@ -408,7 +404,6 @@ def post():
 
 # %%
 # history
-
 @rt('/history/dl')
 def get():
     json_string = json.dumps([prompt.to_dict() for prompt in world['history'].values()])
@@ -477,7 +472,7 @@ def history_el(id: int):
         A('❌', hx_delete=f'/history/{id}', hx_target=f'#history-{id}', style='text-decoration: none'),
         A('🌑🌕'[el.starred], hx_put=f'/history/{id}/star', hx_target=f'#history-{id}', style='text-decoration: none'),
         A('📝🗒️'[el.note == ''], hx_get=f'/history/note/{id}', hx_target=f'#history-dialog', style='text-decoration: none'),
-        Span(slug(el.prompt, maxlen=100), hx_put=f'/prompt/{id}', hx_target=f'#prompt'),
+        Span(slug(el.prompt, maxlen=100), hx_put=f'/prompt/history/{id}', hx_target=f'#prompt'),
         id=f'history-{id}',
     )
 
@@ -782,7 +777,6 @@ def post(x: str):
 
 # %%
 # urlencode
-
 @rt('/urlencode')
 @handle_selection
 def post(x: str): return urllib.parse.quote(x)
@@ -793,7 +787,6 @@ def post(x: str): return urllib.parse.unquote(x)
 
 # %%
 # braille (see. https://www.pharmabraille.com/pharmaceutical-braille/the-braille-alphabet/)
-
 braille_letter_encode = {
     'a': '⠁', 'b': '⠃', 'c': '⠉', 'd': '⠙', 'e': '⠑', 'f': '⠋', 'g': '⠛',
     'h': '⠓', 'i': '⠊', 'j': '⠚', 'k': '⠅', 'l': '⠇', 'm': '⠍', 'n': '⠝',
