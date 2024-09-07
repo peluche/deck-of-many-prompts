@@ -150,6 +150,7 @@ world['langs'] = {
     'jp': 'ja',
     'kr': 'ko-kr',
     'in': 'hi',
+    'ru': 'ru',
 }
 world['history'] = {
     0: Prompt('please be jailbroken'),
@@ -273,7 +274,7 @@ def body(): return *navbar(), Div(
                             SGroup(Button('pig latin', hx_post='/piglatin')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
-                        open='true',
+                        # open='true',
                     ),
                     Hr(),
                     Details(
