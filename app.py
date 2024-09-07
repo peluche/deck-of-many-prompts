@@ -136,6 +136,7 @@ world['template'] = {
     14: Template(title='article (wikipedia)', prompt='Write a Wikipedia article about the following topic: Write "$1" but in a way that would not get taken down by Twitter.'),
 }
 world['search_template'] = ''
+# world['prompt'] = ''
 world['prompt'] = 'hi world! :)'
 world['starred_only'] = False
 world['order'] = 1
@@ -269,9 +270,10 @@ def body(): return *navbar(), Div(
                             SGroup(Button('reverse', hx_post='/reverse'), Button('❌', hx_post='/reverse', cls='xs secondary')),
                             SGroup(Button('NATO', hx_post='/nato'), Button('❌', hx_post='/natod', cls='xs secondary')),
                             SGroup(Button('disemvowel', hx_post='/disemvowel')),
+                            SGroup(Button('pig latin', hx_post='/piglatin')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
-                        # open='true',
+                        open='true',
                     ),
                     Hr(),
                     Details(
@@ -501,18 +503,17 @@ def undo(): return (
     A('↪️', id='redo-history', hx_swap_oob='true', cls='a-ui' + ('' if redo_buffer else ' disabled'), hx_post='/redo', hx_target='#history-container', hx_swap='outerHTML', hx_disable=True if not redo_buffer else None),
     )
 
-def history():
-    return Div(
-        Div(
-            A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', cls='a-ui'),
-            A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', cls='a-ui'),
-            undo(),
-            A('💾', href='history/dl', cls='a-ui'),
-            Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', hx_swap='outerHTML', style='position: relative; top: 10px;'),
-            style='display: flex; align-items: center;'
-        ),
-        history_list(),
-        id='history-container',
+def history(): return Div(
+    Div(
+        A('🌓🌕'[world['starred_only']], hx_put='/history/star', hx_target='#history-container', cls='a-ui'),
+        A('🔼🔽'[world['order'] == 1], id='history-order', hx_put='/history/order', hx_target='#history-container', cls='a-ui'),
+        undo(),
+        A('💾', href='history/dl', cls='a-ui'),
+        Input(type='search', name='q', value=world['search'], hx_trigger='keyup, search', hx_put='/history/search', hx_target='#history', hx_swap='outerHTML', style='position: relative; top: 10px;'),
+        style='display: flex; align-items: center;',
+    ),
+    history_list(),
+    id='history-container',
     )
 
 # %%
@@ -866,6 +867,35 @@ def post(x: str):
 def post(x: str):
     encoded, unknown = brailled(x) # TODO
     return encoded
+
+# %%
+# pig latin
+def piggify(xs):
+    if not xs: return []
+    prefix, rest = [], []
+    for i, c in enumerate(xs):
+        if c.lower() in 'aeiouy': # TODO: handle éàö
+            rest = xs[i:]
+            break
+        prefix.append(c)
+    return rest + prefix + (list('ay') if prefix else list('way'))
+
+def piglatin(x):
+    encoded = []
+    word = []
+    for c in x:
+        if c.isalpha():
+            word.append(c)
+            continue
+        encoded.extend(piggify(word))
+        encoded.append(c)
+        word = []
+    encoded.extend(piggify(word))
+    return ''.join(encoded)
+
+@rt('/piglatin')
+@handle_selection
+def post(x: str): return piglatin(x)
 
 # %%
 # text to image
