@@ -270,8 +270,8 @@ def body(): return *navbar(), Div(
                             SGroup(Button('lower', hx_post='/lower'), Button('❌', hx_post='/upper', cls='xs secondary')),
                             SGroup(Button('reverse', hx_post='/reverse'), Button('❌', hx_post='/reverse', cls='xs secondary')),
                             SGroup(Button('NATO', hx_post='/nato'), Button('❌', hx_post='/natod', cls='xs secondary')),
+                            SGroup(Button('pig latin', hx_post='/piglatin'), Button('❌', hx_post='/piglatind', cls='xs secondary')),
                             SGroup(Button('disemvowel', hx_post='/disemvowel')),
-                            SGroup(Button('pig latin', hx_post='/piglatin')),
                             style='display: flex; flex-wrap: wrap;',
                         ),
                         # open='true',
@@ -871,28 +871,45 @@ def post(x: str):
 
 # %%
 # pig latin
+def piggifyd(xs):
+    # this is a very broken approximation, piglatin is not reversible
+    # e.g. art → artway, wart → artway
+    # there's no way to distinguish between the two
+    if not xs: return []
+    if len(xs) < 3: return xs
+    if xs[-2].lower() != 'a' or xs[-1].lower() != 'y': return xs
+    if xs[-3].lower() == 'w': return xs[:-3]
+    return xs[-3:-2] + xs[:-3]
+
 def piggify(xs):
     if not xs: return []
     prefix, rest = [], []
     for i, c in enumerate(xs):
-        if c.lower() in 'aeiouy': # TODO: handle éàö
+        if c.lower() in 'aeiouy': # TODO: handle éàö...
             rest = xs[i:]
             break
         prefix.append(c)
     return rest + prefix + (list('ay') if prefix else list('way'))
 
-def piglatin(x):
+def tokenize_and_encode(x, f):
     encoded = []
     word = []
     for c in x:
         if c.isalpha():
             word.append(c)
             continue
-        encoded.extend(piggify(word))
+        encoded.extend(f(word))
         encoded.append(c)
         word = []
-    encoded.extend(piggify(word))
+    encoded.extend(f(word))
     return ''.join(encoded)
+
+def piglatind(x): return tokenize_and_encode(x, piggifyd)
+def piglatin(x): return tokenize_and_encode(x, piggify)
+
+@rt('/piglatind')
+@handle_selection
+def post(x: str): return piglatind(x)
 
 @rt('/piglatin')
 @handle_selection
