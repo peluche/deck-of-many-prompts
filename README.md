@@ -14,6 +14,14 @@ python3 -m pip install -r requirements.txt
 python3 app.py
 ```
 
+## Video Demo
+https://x.com/peluchewastaken/status/1833309137171603597
+
+## Live Demo
+Shared instance: No privacy, No data backup, No SLO, and No illegal activities please.
+
+https://deckofmanyprompts.com/
+
 ## Features
 - templates
 - transforms (token smuggling)
