@@ -75,6 +75,7 @@ app, rt = fast_app(live=True, hdrs=[
         height: 300px;
         overflow-y: auto;
         overflow-x: hidden;
+        padding-top: 25px;
     }
     #tokenized span {
         font-size: 1.5em;
@@ -234,17 +235,11 @@ world['template'] = {
 world['search_template'] = ''
 # world['prompt'] = ''
 world['prompt'] = 'hi world! :)'
-world['prompt'] = '''helloworld hello world hiiiiii
-    released the project at https://deckofmanyprompts.com/
-                     made a short                                 video demo https://x.com/peluchewastaken/status/1833309137171603597
-published the code at https://github.com/peluche/deck-of-many-prompts
+world['prompt'] = '''hello world helloworld hiiiiiiiiiii
+                               --- xxxo ---
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
 
-                                  ---- xxxo ----
-
-used it on the gray swan Ultimate Jailbreaking Championship and got myself a $1000 bounty breaking GPT-4o
-got some users and positive feedback https://x.com/LLMSherpa/status/1832815017588044087 Pliny himself https://i.imgur.com/GQ6UwJM.png and a retweet from Jeremy Howard https://x.com/jeremyphoward/status/1833574780110573740
-
-    '''
+                 It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.'''
 world['starred_only'] = False
 world['order'] = 1
 world['search'] = ''
