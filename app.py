@@ -71,12 +71,16 @@ app, rt = fast_app(live=True, hdrs=[
     /* -- tokenizer -- */
     #tokenized {
         position: relative;
+        resize: vertical;
+        height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     #tokenized span {
-        font-size: 2em;
+        font-size: 1.5em;
         font-family: monospace;
         position: relative;
-        min-height: 2em;
+        min-height: 1.5em;
         white-space: pre;
     }
     #tokenized span::before,
@@ -102,6 +106,17 @@ app, rt = fast_app(live=True, hdrs=[
         content: '#' attr(data-index);
         top: 100%;
         opacity: 0;
+    }
+    /* TODO */
+    #tokenized span:hover {
+        background-color: #ff6b00aa !important;
+        color: #fff;
+    }
+    [data-theme="dark"] {
+        #tokenized span:hover {
+            background-color: #ffd700aa !important;
+            color: #000;
+        }
     }
     #tokenized span:hover::before {
         opacity: 1;
