@@ -28,6 +28,19 @@ app, rt = fast_app(live=True, hdrs=[
     body {
         padding-left: 7px;
     }
+    .left-col {
+        overflow: auto;
+        resize: horizontal;
+        width: 60%;
+        min-width: 10%;
+        max-width: 90%;
+    }
+    .right-col {
+        flex: 1;
+        overflow: auto;
+        min-width: 10%;
+        max-width: 90%;
+    }
     .xs {
         border: 0;
         margin: 0;
@@ -344,7 +357,8 @@ def body(): return *navbar(), Div(
                     hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
                 tokenized(),
                 history(),
-                style='flex: 1'),
+                cls='left-col',
+            ),
             Div(
                 Card(
                     Details(
@@ -446,7 +460,7 @@ def body(): return *navbar(), Div(
                         # open='true',
                     ),
                 ),
-                style='flex: 1; max-width: 600px',
+                cls='right-col',
             ),
             style='display: flex',
         ),
