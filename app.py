@@ -15,9 +15,19 @@ import random
 import string
 import urllib
 
+def token_colors(colors=['#6b40d84d', '#68de7a66', '#f4ac3666', '#ef414666', '#27b5ea66']):
+    return ''.join(f'''
+    #tokenized span:nth-child({len(colors)}n+{i+1}) {{
+        background-color: {color};
+    }}
+    ''' for i, color in enumerate(colors))
+
 app, rt = fast_app(live=True, hdrs=[
     Link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css', type='text/css'),
     Style('''
+    body {
+        padding-left: 7px;
+    }
     .xs {
         border: 0;
         margin: 0;
@@ -58,7 +68,52 @@ app, rt = fast_app(live=True, hdrs=[
             color: #fff;
         }
     }
-    '''),
+    /* -- tokenizer -- */
+    #tokenized {
+        position: relative;
+    }
+    #tokenized span {
+        font-size: 2em;
+        font-family: monospace;
+        position: relative;
+        min-height: 2em;
+        white-space: pre;
+    }
+    #tokenized span::before,
+    #tokenized span::after {
+        position: absolute;
+        background-color: #333;
+        color: #fff;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: -1;
+        white-space: nowrap;  // Prevents wrapping of tooltip text
+        pointer-events: none;  // Prevent tooltips from interfering with mouse events
+    }
+    #tokenized span::before {
+        content: '[' attr(data-tokenid) ']';
+        bottom: 100%;
+        opacity: 0;
+    }
+    #tokenized span::after {
+        content: '#' attr(data-index);
+        top: 100%;
+        opacity: 0;
+    }
+    #tokenized span:hover::before {
+        opacity: 1;
+        z-index: 1;
+        pointer-events: none;
+    }
+    #tokenized span:hover::after {
+        opacity: 1;
+        z-index: 1;
+        pointer-events: none;
+    }
+    ''' + token_colors()),
     Script('''
     /* dark/light mode */
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -83,7 +138,32 @@ app, rt = fast_app(live=True, hdrs=[
         i = e.keyCode == k[i] ? i + 1 : 0;
         if (i == 10) alert('( ಥ‿ಥ)  ლ(́◉◞౪◟◉‵ლ)');
     });
+    /* tokenize */
+    async function tokenize_prompt() {
+        const input = document.getElementById('prompt').value;
+        const tokens = Array.from(tokenizer(input).input_ids.data).map(x => [x, tokenizer.decode([x])]);
+        const tokenizedElement = document.getElementById('tokenized');
+        tokenizedElement.innerHTML = '';
+        tokens.forEach(([token_id, token], index) => {
+            const span = document.createElement('span');
+            span.innerText = token;
+            span.setAttribute('data-index', index);
+            span.setAttribute('data-tokenid', token_id);
+            tokenizedElement.appendChild(span);
+        });
+    }
     '''),
+    Script('''
+    /* tokenize loading */
+    const { AutoTokenizer } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@latest/dist/transformers.min.js');
+    window.tokenizer = await AutoTokenizer.from_pretrained('Xenova/claude-tokenizer');
+    //const tokenizer = await AutoTokenizer.from_pretrained('Xenova/bert-base-uncased');
+    //const tokenizer = await AutoTokenizer.from_pretrained('Xenova/gpt-3');
+    //const tokenizer = await AutoTokenizer.from_pretrained('Xenova/claude-tokenizer');
+    //window.AutoTokenizer = AutoTokenizer;
+    //window.tokenizer = tokenizer;
+    tokenize_prompt();
+    ''', type='module'),
 ])
 
 def SGroup(*args, **kwargs): return Group(*args, **kwargs, style='width: auto; flex: 1; margin: 5px;')
@@ -139,6 +219,17 @@ world['template'] = {
 world['search_template'] = ''
 # world['prompt'] = ''
 world['prompt'] = 'hi world! :)'
+world['prompt'] = '''helloworld hello world hiiiiii
+    released the project at https://deckofmanyprompts.com/
+                     made a short                                 video demo https://x.com/peluchewastaken/status/1833309137171603597
+published the code at https://github.com/peluche/deck-of-many-prompts
+
+                                  ---- xxxo ----
+
+used it on the gray swan Ultimate Jailbreaking Championship and got myself a $1000 bounty breaking GPT-4o
+got some users and positive feedback https://x.com/LLMSherpa/status/1832815017588044087 Pliny himself https://i.imgur.com/GQ6UwJM.png and a retweet from Jeremy Howard https://x.com/jeremyphoward/status/1833574780110573740
+
+    '''
 world['starred_only'] = False
 world['order'] = 1
 world['search'] = ''
@@ -188,7 +279,7 @@ def handle_selection(func):
 def wordlist(x: str = ''): return Textarea(x, id='wordlist', name='wordlist')
 
 def prompt(x: str):
-    return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px')
+    return Textarea(x, id='prompt', name='x', hx_swap_oob='true', style='height: 300px', hx_trigger='keyup[tokenize_prompt()]', **{'hx-on::after-settle': 'tokenize_prompt()'}) # yyy
 
 @rt('/prompt/history/{id}')
 def put(id: int): return prompt(world['history'][id].prompt)
@@ -241,6 +332,7 @@ def body(): return *navbar(), Div(
                     hx_post='/history', 
                     hx_target='#history',
                     hx_trigger='click, click[navigator.clipboard.writeText(document.getElementById("prompt").value)]'),
+                tokenized(),
                 history(),
                 style='flex: 1'),
             Div(
@@ -516,6 +608,13 @@ def history(): return Div(
     ),
     history_list(),
     id='history-container',
+    )
+
+# %%
+# tokenized # xxx
+def tokenized(): return Div(
+    Div(id='tokenized'),
+    id='tokenized-container',
     )
 
 # %%
