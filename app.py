@@ -1,7 +1,7 @@
 # %%
 from dataclasses import dataclass
 from fasthtml.common import * # TODO: remove when dev is over
-from fasthtml.common import fast_app, serve, A, Button, DialogX, Div, FileResponse, Form, Group, Input, P, Pre, Span, Style, Textarea
+from fasthtml.common import fast_app, serve, A, Button, DialogX, Card, Details, Div, FileResponse, Form, Grid, Group, H3, Hr, I, Img, Input, Li, Label, Link, Nav, Option, P, Pre, Script, Select, Span, Style, Summary, Textarea, Title, Ul
 from functools import wraps
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -108,8 +108,8 @@ app, rt = fast_app(live=True, hdrs=[
         left: 50%;
         transform: translateX(-50%);
         z-index: -1;
-        white-space: nowrap;  // Prevents wrapping of tooltip text
-        pointer-events: none;  // Prevent tooltips from interfering with mouse events
+        white-space: nowrap;
+        pointer-events: none;
     }
     #tokenized span::before {
         content: '[' attr(data-tokenid) ']';
@@ -121,7 +121,6 @@ app, rt = fast_app(live=True, hdrs=[
         top: 100%;
         opacity: 0;
     }
-    /* TODO */
     #tokenized span:hover {
         background-color: #ff6b00aa !important;
         color: #fff;
