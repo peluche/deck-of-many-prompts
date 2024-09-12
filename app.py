@@ -227,7 +227,7 @@ class Prompt:
         }
 
 @dataclass
-class Session: # xxx
+class Session:
     starred_only: bool = False
     order: int = 1
     search: str = ''
@@ -247,7 +247,6 @@ class Session: # xxx
         return dict({k: copy.deepcopy(getattr(self, k)) for k in fields})
 
     def backup_history(self): return self.backup_fields(['history', 'history_count'])
-
 
 world = {}
 world['wordlist'] = {
@@ -408,6 +407,7 @@ def navbar(): return (
         Div(
             A(I(cls='fab fa-github fa-fw', role='img'), href='https://github.com/peluche', cls='icon-link'),
             A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/', cls='icon-link'),
+            A(I(cls='fab fa-x-twitter fa-fw', role='img'), href='https://x.com/peluchewastaken', cls='icon-link'),
             A(I(cls='fas fa-adjust fa-fw'), cls='icon-link', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
         ),
         style='padding: 0px 20px',
