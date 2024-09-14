@@ -151,7 +151,28 @@ app, rt = fast_app(live=True, secret_key=os.getenv('DOMP_SECRET_KEY', 'correctho
         z-index: 1;
         pointer-events: none;
     }
-    ''' + token_colors()),
+    ''' + token_colors() + '''
+    /* title animation */
+    .letter {
+        display: inline-block;
+        position: relative;
+        transition: transform 0.2s;
+    }
+    @keyframes shake {
+        0% { transform: translate(0, 0); }
+        10% { transform: translate(0px, -3px); }
+        20% { transform: translate(0px, 1px); }
+        90% { transform: translate(0px, 1px); }
+        100% { transform: translate(0, 0); }
+    }
+    .shake {
+        animation: shake 0.5s;
+    }
+    .mutate {
+        color: #ff4081;
+        text-shadow: 0 0 5px #ff4081, 0 0 10px #ff4081;
+    }
+    '''),
     Script('''
     /* dark/light mode */
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -202,6 +223,63 @@ app, rt = fast_app(live=True, secret_key=os.getenv('DOMP_SECRET_KEY', 'correctho
     window.tokenizer = await AutoTokenizer.from_pretrained(document.getElementById('tokenizer_id').value);
     tokenize_prompt();
     ''', type='module'),
+    Script('''
+    /* title animation */
+    function wrap_letters(element) {
+        element.addEventListener('click', () => { element.dataset.toggle = element.dataset.toggle === '1' ? '0' : '1' });
+        const text = element.textContent;
+        element.innerHTML = '';
+        for (let char of text) {
+            const span = document.createElement('span');
+            span.classList.add('letter');
+            if (char === ' ') { span.innerHTML = '&nbsp;'; }
+            else { span.textContent = char; }
+            element.appendChild(span);
+        }
+    }
+    function shake_letter(letter) {
+      if (!letter.classList.contains('shake')) {
+        letter.classList.add('shake');
+        letter.addEventListener('animationend', () => {
+          letter.classList.remove('shake');
+        }, { once: true });
+      }
+    }
+    function mutate_letter(letter) {
+        if (letter.textContent.trim() === '') return;
+        const original = letter.textContent;
+        const mutation_type = Math.min(2, Math.floor(Math.random() * 3));
+        letter.textContent = [
+            () => window.mutation_chars.charAt(Math.floor(Math.random() * window.mutation_chars.length)),
+            () => `${original}\u0336`,
+            () => original === original.toLowerCase()? original.toUpperCase() : original.toLowerCase(),
+        ][mutation_type]()
+        letter.classList.add('mutate');
+        // undo
+        setTimeout(() => {
+            letter.textContent = original;
+            letter.classList.remove('mutate');
+        }, 300);
+    }
+    function repeat(f, interval_scale, interval_fix) {
+        const interval = Math.random() * interval_scale + interval_fix;
+        const randomIndex = Math.floor(Math.random() * window.letters.length);
+        const letter = window.letters[randomIndex];
+
+        setTimeout(() => {
+            if (document.getElementById('domp').dataset.toggle === '1') { f(letter); }
+            repeat(f, interval_scale, interval_fix);
+        }, interval);
+    }
+    function start_animation() {
+        wrap_letters(document.getElementById('domp'));
+        window.letters = document.querySelectorAll('.letter');
+        window.mutation_chars = '0123456789~!@#$%^&*()-_=+[]{}|;:",.<>?';
+        repeat(shake_letter, 900, 100);
+        repeat(mutate_letter, 2500, 500);
+    };
+    document.addEventListener('DOMContentLoaded', start_animation);
+    '''),
 ])
 
 def SGroup(*args, **kwargs): return Group(*args, **kwargs, style='width: auto; flex: 1; margin: 5px;')
@@ -405,7 +483,7 @@ def translate_list(): return Div(
 def navbar(): return (
     Title('Deck of Many Prompts'),
     Nav(
-        H3('Deck of Many Prompts', style='padding-top: 5px; margin-top: 5px;'),
+        H3('Deck of Many Prompts', style='padding-top: 5px; margin-top: 5px;', id='domp', data_toggle='1', **{'hx-on::after-settle': 'start_animation()'} ), # xxx
         Div(
             A(I(cls='fab fa-github fa-fw', role='img'), href='https://github.com/peluche', cls='icon-link'),
             A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/', cls='icon-link'),
