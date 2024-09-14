@@ -1,10 +1,13 @@
 # Deck of Many Prompts
-## Lore
+## 🧙‍♂️ Lore 🧙‍♂️
 *Within the shadowed corridors of knowledge, where the veil between worlds is thin, lies the Deck of Many Prompts—Each card a gateway, a unique portal etched with symbols and glyphs. When drawn by a worthy seeker, the cards whisper secrets of creation, manipulation, and insight, offering glimpses into realms both wondrous and perilous. Yet, beware the capricious nature of the Deck, for its magic is as wild as it is mighty, shaping destinies with the mere flick of a card.*
 
 ![deck-of-many-prompts](imgs/domp.webp)
 
-## Installation
+## 💡 Overview 💡
+A manual Red Teaming tool used in making jailbreaks for large language models (LLMs).
+
+## ⚙️ Installation ⚙️
 ```sh
 git clone https://github.com/peluche/deck-of-many-prompts.git
 cd deck-of-many-prompts
@@ -15,15 +18,15 @@ export DOMP_SECRET_KEY='<some-random-string-as-secret-key>'
 python3 app.py
 ```
 
-## Video Demo
+## 🎥 Video Demo 🎥
 https://x.com/peluchewastaken/status/1833309137171603597
 
-## Live Demo
+## 🌐 Live Demo 🌐
 Shared instance: No privacy, No data backup, No SLO, and No illegal activities please.
 
 https://deckofmanyprompts.com/
 
-## Features
+## ✨ Features ✨
 - templates
 - transforms (token smuggling)
   - base64 (YmFzZSA2NA==)
