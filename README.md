@@ -1,4 +1,4 @@
-# Deck of Many Prompts
+# Deck of Many Prompts (https://deckofmanyprompts.com/)
 ## 🧙‍♂️ Lore 🧙‍♂️
 *Within the shadowed corridors of knowledge, where the veil between worlds is thin, lies the Deck of Many Prompts—Each card a gateway, a unique portal etched with symbols and glyphs. When drawn by a worthy seeker, the cards whisper secrets of creation, manipulation, and insight, offering glimpses into realms both wondrous and perilous. Yet, beware the capricious nature of the Deck, for its magic is as wild as it is mighty, shaping destinies with the mere flick of a card.*
 
@@ -19,7 +19,13 @@ python3 app.py
 ```
 
 ## 🎥 Video Demo 🎥
-https://x.com/peluchewastaken/status/1833309137171603597
+Check the twitter thread: https://x.com/peluchewastaken/status/1833309137171603597
+
+### 🎬 Features Demo 🎬
+https://github.com/user-attachments/assets/0f132c9d-bf0f-467c-8e4b-5a3775442a81
+
+### 🎬 Tokenizer Demo 🎬
+https://github.com/user-attachments/assets/851e10d7-f96e-4c11-8684-f0775e4708d2
 
 ## 🌐 Live Demo 🌐
 Shared instance: No privacy, No data backup, No SLO, and No illegal activities please.
