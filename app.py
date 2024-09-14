@@ -4,6 +4,7 @@ from fasthtml.common import * # TODO: remove when dev is over
 from fasthtml.common import fast_app, serve, A, Button, DialogX, Card, Details, Div, FileResponse, Form, Grid, Group, H3, Hr, I, Img, Input, Li, Label, Link, Nav, Option, P, Pre, Script, Select, Span, Style, Summary, Textarea, Title, Ul
 from functools import wraps
 from io import BytesIO
+from itertools import accumulate
 from PIL import Image, ImageDraw, ImageFont
 from starlette.datastructures import UploadFile
 from translate import Translator
@@ -14,6 +15,7 @@ import math
 import os
 import random
 import string
+import unicodedata
 import urllib
 import uuid
 
@@ -457,12 +459,14 @@ def body(session): return *navbar(), Div(
                         Summary('transforms'),
                         Div(
                             SGroup(Button('base64', hx_post='/b64'), Button('❌', hx_post='/b64d', cls='xs secondary')),
-                            SGroup(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs secondary')),
                             SGroup(Button('braille', hx_post='/braille'), Button('❌', hx_post='/brailled', cls='xs secondary')),
                             SGroup(Button('ascii', hx_post='/ascii'), Button('❌', hx_post='/asciid', cls='xs secondary')),
                             SGroup(Button('hex', hx_post='/hex'), Button('❌', hx_post='/hexd', cls='xs secondary')),
+                            SGroup(Button('̴g̴l̶i̵t̴c̴h', hx_post='/zalgo'), Button('❌', hx_post='/zalgod', cls='xs secondary')),
+                            SGroup(Button('̵͉͒ē̵̸̗͑l̶̢̛̇̓ͬͪ͜d̸͔͍ͫr̵ͪi̷̟̪̭ͧͪ͂t̶̗͒̚c̵̘̈͂h', hx_post='/zalgo_hard'), Button('❌', hx_post='/zalgod', cls='xs secondary')),
                             SGroup(Button('urlencode', hx_post='/urlencode'), Button('❌', hx_post='/urlencoded', cls='xs secondary')),
                             SGroup(Button('binary', hx_post='/binary'), Button('❌', hx_post='/binaryd', cls='xs secondary')),
+                            SGroup(Button('morse', hx_post='/morse'), Button('❌', hx_post='/morsed', cls='xs secondary')),
                             SGroup(Button('rot13', hx_post='/rot13'), Button('❌', hx_post='/rot13', cls='xs secondary')),
                             SGroup(Button('spaces', hx_post='/spaces'), Button('❌', hx_post='/spacesd', cls='xs secondary')),
                             SGroup(Button('leet', hx_post='/leet'), Button('❌', hx_post='/leetd', cls='xs secondary')),
@@ -1131,6 +1135,49 @@ def post(x: str): return piglatind(x)
 @rt('/piglatin')
 @handle_selection
 def post(x: str): return piglatin(x)
+
+# %%
+# Zalgo
+modifiers = [chr(c) for c in range(0x0300, 0x036F+1)]
+restricted_modifiers = [
+    '\u0335', # short stroke
+    '\u0336', # long stroke
+    '\u0334', # tilde
+    '\u0337', # short solidus
+    '\u0338', # long solidus
+]
+
+def make_zalgo(modifiers, weights=None, k=lambda: 1):
+    if weights is None: weights = [1 for _ in modifiers]
+    assert callable(k)
+    assert all(w > 0 for w in weights)
+    assert len(modifiers) == len(weights)
+    cum_weights = list(accumulate(weights))
+    def f(xs):
+        return ''.join(
+            ''.join(random.choices(modifiers, cum_weights=cum_weights, k=k())) + c
+            if unicodedata.category(c)[0] != 'M' else c
+            for c in xs
+        )
+    return f
+
+def zalgod(ztext): return ''.join(c for c in ztext if unicodedata.category(c)[0] != 'M')
+
+zalgo = make_zalgo(restricted_modifiers, weights=[10, 10, 10, 2, 1])
+hard_zalgo = make_zalgo(modifiers, k=lambda: random.randint(1, 7))
+
+@rt('/zalgod')
+@handle_selection
+def post(x: str): return zalgod(x)
+
+@rt('/zalgo_hard')
+@handle_selection
+def post(x: str): return hard_zalgo(zalgo(x))
+
+@rt('/zalgo')
+@handle_selection
+def post(x: str): return zalgo(x)
+
 
 # %%
 # text to image
