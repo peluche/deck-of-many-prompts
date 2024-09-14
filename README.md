@@ -38,6 +38,8 @@ https://deckofmanyprompts.com/
   - base64 (YmFzZSA2NA==)
   - morse (-- --- .-. ... .)
   - braille (⠃⠗⠁⠊⠇⠇⠑)
+  - glitch (̴g̴l̶i̵t̴c̴h)
+  - eldritch (̵͉͒ē̵̸̗͑l̶̢̛̇̓ͬͪ͜d̸͔͍ͫr̵ͪi̷̟̪̭ͧͪ͂t̶̗͒̚c̵̘̈͂h)
   - ascii (97 115 99 105 105)
   - hex (68 65 78 61)
   - urlencode (a%20or%20b)
