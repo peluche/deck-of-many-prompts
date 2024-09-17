@@ -819,7 +819,9 @@ def tokenized(): return Div(Div(id='tokenized'), id='tokenized-container')
 # %%
 # base64
 def b64(x: str): return base64.b64encode(x.encode()).decode()
-def b64d(x: str): return base64.b64decode(x.encode()).decode()
+def b64d(x: str):
+    try: return base64.b64decode(x.encode()).decode()
+    except Exception: return '<🚨__INVALID_BASE64_😱_SORRY__🚨>'
 
 @rt('/b64')
 @handle_selection
