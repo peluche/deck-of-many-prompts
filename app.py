@@ -486,7 +486,7 @@ def navbar(): return (
         H3('Deck of Many Prompts', style='padding-top: 5px; margin-top: 5px;', id='domp', data_toggle='1', **{'hx-on::after-settle': 'start_animation()'} ), # xxx
         Div(
             A(I(cls='fab fa-github fa-fw', role='img'), href='https://github.com/peluche/deck-of-many-prompts', cls='icon-link'),
-            A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/posts/deck-of-many-prompts-jailbreaking-llms-for-fun-and-profit/', cls='icon-link'),
+            A(I(cls='fas fa-book-skull fa-fw', role='img'), href='https://swe-to-mle.pages.dev/', cls='icon-link'),
             A(I(cls='fab fa-x-twitter fa-fw', role='img'), href='https://x.com/peluchewastaken', cls='icon-link'),
             A(I(cls='fas fa-adjust fa-fw'), cls='icon-link', hx_trigger='click[document.documentElement.setAttribute("data-theme", document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark")]'),
         ),
